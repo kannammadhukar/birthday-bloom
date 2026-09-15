@@ -766,6 +766,14 @@ export default function ShinchanIntro({ onDone }: Props) {
                   className="shinchan-img"
                   src="/images/shinchan_dance.gif"
                   alt="Shin Chan Dancing"
+                  loading="eager"
+                  decoding="sync"
+                  onError={(e) => {
+                    const el = e.currentTarget;
+                    if (!el.src.includes("shinchan_dance_l.png")) {
+                      el.src = "/images/shinchan_dance_l.png";
+                    }
+                  }}
                   style={{
                     width: "clamp(150px, 24vh, 210px)",
                     height: "clamp(150px, 24vh, 210px)",
@@ -989,6 +997,14 @@ export default function ShinchanIntro({ onDone }: Props) {
                   className="shinchan-img"
                   src="/images/shinchan_tantrum.gif"
                   alt="Shin Chan Crying Tantrum"
+                  loading="eager"
+                  decoding="sync"
+                  onError={(e) => {
+                    const el = e.currentTarget;
+                    if (!el.src.includes("shinchan_tantrum.png")) {
+                      el.src = "/images/shinchan_tantrum.png";
+                    }
+                  }}
                   style={{
                     width: "clamp(150px, 24vh, 210px)",
                     height: "clamp(150px, 24vh, 210px)",
@@ -1184,6 +1200,14 @@ export default function ShinchanIntro({ onDone }: Props) {
                   className="shinchan-img"
                   src="/images/shinchan_shy.gif"
                   alt="Shin Chan Blushing Shy"
+                  loading="eager"
+                  decoding="sync"
+                  onError={(e) => {
+                    const el = e.currentTarget;
+                    if (!el.src.includes("shinchan_shy.png")) {
+                      el.src = "/images/shinchan_shy.png";
+                    }
+                  }}
                   style={{
                     width: "clamp(150px, 24vh, 210px)",
                     height: "clamp(150px, 24vh, 210px)",

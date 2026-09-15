@@ -141,6 +141,16 @@ export default function Home() {
         localStorage.removeItem("divija_auth_role");
       } catch {}
 
+      // Preload lightweight Shinchan animated GIFs immediately while on the passcode gate
+      const shinchanAssets = [
+        "/images/shinchan_dance.gif",
+        "/images/shinchan_tantrum.gif",
+        "/images/shinchan_shy.gif",
+      ];
+      shinchanAssets.forEach((src) => {
+        const img = new window.Image();
+        img.src = src;
+      });
     }
   }, []);
 
