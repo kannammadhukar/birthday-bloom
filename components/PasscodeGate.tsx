@@ -11,120 +11,54 @@ export default function PasscodeGate({ onUnlock }: PasscodeGateProps) {
   const [errorMsg, setErrorMsg] = useState<string>("");
   const [successMsg, setSuccessMsg] = useState<string>("");
   const [shake, setShake] = useState<boolean>(false);
-  const [isVerifying, setIsVerifying] = useState<boolean>(false);
-  const masterInputRef = useRef<HTMLInputElement>(null);
 
-  // Gentle audio chime for feedback
-  const playTone = useCallback((freq = 520, duration = 0.08) => {
+  const handleUnlockNow = useCallback((pass: string = "2006") => {
+    setSuccessMsg("Welcome to the Gala! 👑 Opening celebration...");
     try {
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioCtx) return;
-      const ctx = new AudioCtx();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(freq, ctx.currentTime);
-      gain.gain.setValueAtTime(0.04, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + duration);
+      localStorage.setItem("divija_passcode_auth", "unlocked");
+      localStorage.setItem("divija_auth_role", pass === "2006" ? "admin" : "guest");
     } catch {}
-  }, []);
+    onUnlock({ isAdmin: pass === "2006", code: pass });
+  }, [onUnlock]);
 
   const verifyCode = useCallback((codeToVerify: string) => {
-    if (isVerifying) return;
-    setIsVerifying(true);
     const cleaned = codeToVerify.trim();
-
-    if (cleaned === "2006") {
-      setSuccessMsg("Welcome, Divija! 👑 Secret Admin Mode Unlocked");
-      playTone(880, 0.2);
-      try {
-        localStorage.setItem("divija_auth_role", "admin");
-        localStorage.removeItem("divija_passcode_auth");
-      } catch {}
-      setTimeout(() => {
-        onUnlock({ isAdmin: true, code: "2006" });
-      }, 500);
-    } else if (cleaned === "2003" || cleaned === "1109" || cleaned === "0911") {
-      setSuccessMsg("Invitation Verified ✨ Welcome to the Gala!");
-      playTone(660, 0.2);
-      try {
-        localStorage.setItem("divija_auth_role", "guest");
-        localStorage.removeItem("divija_passcode_auth");
-      } catch {}
-      setTimeout(() => {
-        onUnlock({ isAdmin: false, code: "2003" });
-      }, 500);
+    if (cleaned === "2006" || cleaned === "2003" || cleaned === "1109" || cleaned === "0911") {
+      handleUnlockNow(cleaned);
     } else {
       setShake(true);
-      setErrorMsg("Incorrect Passcode 🔒 Try 2006 (Divija) or 2003 (Guest)");
-      playTone(220, 0.15);
+      setErrorMsg("Incorrect code. Tap 'Enter Gala Directly' above to enter!");
       setTimeout(() => {
         setShake(false);
         setCode("");
-        setIsVerifying(false);
-      }, 850);
+      }, 700);
     }
-  }, [isVerifying, onUnlock, playTone]);
+  }, [handleUnlockNow]);
 
-  // Lock page scroll on mount and clear any persisted auto-unlock
-  useEffect(() => {
-    try {
-      localStorage.removeItem("divija_passcode_auth");
-    } catch {}
-
-    // Lock page scroll to (0, 0) so background doesn't shift
-    window.scrollTo(0, 0);
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prevOverflow;
-    };
-  }, []);
-
-  // Auto-verify as soon as 4 digits are entered
-  useEffect(() => {
-    if (code.length === 4 && !isVerifying) {
-      const timer = setTimeout(() => {
-        verifyCode(code);
-      }, 100);
-      return () => clearTimeout(timer);
+  // Handle numpad digit press (synchronous, instant, zero latency)
+  const handleNumpadPress = useCallback((val: string) => {
+    setErrorMsg("");
+    if (val === "⌫") {
+      setCode((prev) => prev.slice(0, -1));
+      return;
     }
-  }, [code, isVerifying, verifyCode]);
-
-  // Touch & click-safe numpad handler
-  const handleNumpadPress = useCallback(
-    (val: string) => {
-      if (isVerifying) return;
-      setErrorMsg("");
-
-      if (val === "⌫") {
-        playTone(320);
-        setCode((prev) => prev.slice(0, -1));
-        return;
+    if (val === "C") {
+      setCode("");
+      return;
+    }
+    setCode((prev) => {
+      if (prev.length >= 4) return prev;
+      const next = prev + val;
+      if (next.length === 4) {
+        setTimeout(() => verifyCode(next), 80);
       }
-      if (val === "C") {
-        playTone(280);
-        setCode("");
-        return;
-      }
+      return next;
+    });
+  }, [verifyCode]);
 
-      playTone(460 + (code.length + 1) * 60);
-      setCode((prev) => {
-        if (prev.length >= 4) return prev;
-        return prev + val;
-      });
-    },
-    [isVerifying, code.length, playTone]
-  );
-
-  // Global physical keyboard listener (only active while gate is shown)
+  // Physical keyboard listener
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (isVerifying) return;
       if (e.key >= "0" && e.key <= "9") {
         handleNumpadPress(e.key);
       } else if (e.key === "Backspace") {
@@ -132,49 +66,22 @@ export default function PasscodeGate({ onUnlock }: PasscodeGateProps) {
       } else if (e.key === "Delete" || e.key === "Escape") {
         handleNumpadPress("C");
       } else if (e.key === "Enter") {
-        if (code.length === 4) {
-          verifyCode(code);
-        } else {
-          handleQuickUnlock("2006");
-        }
+        handleUnlockNow("2006");
       }
     };
-
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [code, isVerifying, handleNumpadPress, verifyCode]);
+  }, [handleNumpadPress, handleUnlockNow]);
 
-  // Auto-focus master input on mount
+  // Lock page scroll on mount
   useEffect(() => {
-    masterInputRef.current?.focus();
+    window.scrollTo(0, 0);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
   }, []);
-
-  // Handle master input typing for soft keyboard or direct typing
-  const handleMasterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (isVerifying) return;
-    const cleanDigits = e.target.value.replace(/[^0-9]/g, "").slice(0, 4);
-    setCode(cleanDigits);
-    setErrorMsg("");
-    if (cleanDigits.length > 0) {
-      playTone(440 + cleanDigits.length * 60);
-    }
-  };
-
-  // 1-Tap Quick Unlock for instant entry
-  const handleQuickUnlock = (pass: string = "2006") => {
-    if (isVerifying) return;
-    setErrorMsg("");
-    setCode(pass);
-    setSuccessMsg("Welcome! Opening Gala... ✨");
-    playTone(880, 0.2);
-    try {
-      localStorage.setItem("divija_passcode_auth", "unlocked");
-      localStorage.setItem("divija_auth_role", pass === "2006" ? "admin" : "guest");
-    } catch {}
-    setTimeout(() => {
-      onUnlock({ isAdmin: pass === "2006", code: pass });
-    }, 250);
-  };
 
   const digitsArray = [0, 1, 2, 3].map((idx) => code[idx] || "");
 
@@ -217,9 +124,30 @@ export default function PasscodeGate({ onUnlock }: PasscodeGateProps) {
           position: "relative",
         }}
       >
+        {/* Corner Skip Button */}
+        <button
+          type="button"
+          onClick={() => handleUnlockNow("2006")}
+          style={{
+            position: "absolute",
+            top: "12px",
+            right: "12px",
+            background: "rgba(212, 175, 55, 0.2)",
+            border: "1px solid rgba(212, 175, 55, 0.6)",
+            borderRadius: "16px",
+            padding: "4px 12px",
+            color: "#ffd700",
+            fontSize: "0.76rem",
+            fontWeight: 700,
+            cursor: "pointer",
+            zIndex: 10,
+          }}
+        >
+          Skip ➔
+        </button>
+
         {/* Decorative corner brackets */}
         <div style={{ position: "absolute", top: 10, left: 10, width: 16, height: 16, borderTop: "2px solid #d4af37", borderLeft: "2px solid #d4af37" }} />
-        <div style={{ position: "absolute", top: 10, right: 10, width: 16, height: 16, borderTop: "2px solid #d4af37", borderRight: "2px solid #d4af37" }} />
         <div style={{ position: "absolute", bottom: 10, left: 10, width: 16, height: 16, borderBottom: "2px solid #d4af37", borderLeft: "2px solid #d4af37" }} />
         <div style={{ position: "absolute", bottom: 10, right: 10, width: 16, height: 16, borderBottom: "2px solid #d4af37", borderRight: "2px solid #d4af37" }} />
 
@@ -271,39 +199,16 @@ export default function PasscodeGate({ onUnlock }: PasscodeGateProps) {
           </span>
         </p>
 
-        {/* 4 Digit Boxes Container (with Master Input for native typing) */}
+        {/* 4 Visual Digit Boxes */}
         <div
-          onClick={() => masterInputRef.current?.focus()}
           style={{
             position: "relative",
             display: "flex",
             justifyContent: "center",
             gap: "clamp(8px, 2.5vw, 12px)",
             marginBottom: "12px",
-            cursor: "pointer",
           }}
         >
-          {/* Master Input (transparent overlay that captures native keyboard) */}
-          <input
-            ref={masterInputRef}
-            type="tel"
-            pattern="[0-9]*"
-            inputMode="numeric"
-            autoComplete="one-time-code"
-            maxLength={4}
-            value={code}
-            onChange={handleMasterChange}
-            aria-label="4-digit invitation passcode"
-            style={{
-              position: "absolute",
-              inset: 0,
-              width: "100%",
-              height: "100%",
-              opacity: 0.01,
-              cursor: "pointer",
-              zIndex: 5,
-            }}
-          />
 
           {/* 4 Visual Luxury Gold Cells */}
           {digitsArray.map((digit, idx) => {
@@ -401,7 +306,7 @@ export default function PasscodeGate({ onUnlock }: PasscodeGateProps) {
         {/* Big Direct 1-Tap Entry Button (Guaranteed instant access) */}
         <button
           type="button"
-          onClick={() => handleQuickUnlock("2006")}
+          onClick={() => handleUnlockNow("2006")}
           style={{
             width: "100%",
             padding: "13px 18px",
@@ -485,7 +390,7 @@ export default function PasscodeGate({ onUnlock }: PasscodeGateProps) {
           <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
             <button
               type="button"
-              onClick={() => handleQuickUnlock("2006")}
+              onClick={() => handleUnlockNow("2006")}
               style={{
                 flex: 1,
                 padding: "10px 12px",
@@ -509,7 +414,7 @@ export default function PasscodeGate({ onUnlock }: PasscodeGateProps) {
             </button>
             <button
               type="button"
-              onClick={() => handleQuickUnlock("2003")}
+              onClick={() => handleUnlockNow("2003")}
               style={{
                 flex: 1,
                 padding: "10px 12px",

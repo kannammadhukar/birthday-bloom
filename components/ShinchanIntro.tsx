@@ -184,7 +184,9 @@ export default function ShinchanIntro({ onDone }: Props) {
   // Start BGM on first user click or touch anywhere
   useEffect(() => {
     const handleFirstGesture = () => {
-      playScreenBgm(screenRef.current);
+      try {
+        playScreenBgm(screen);
+      } catch {}
       window.removeEventListener("click", handleFirstGesture);
       window.removeEventListener("touchstart", handleFirstGesture);
     };
