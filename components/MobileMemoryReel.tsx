@@ -110,6 +110,7 @@ export default function MobileMemoryReel({ photos, onSelectPhoto }: MobileMemory
   const touchStartYRef = useRef(0);
   const isHorizontalSwipeRef = useRef<boolean | null>(null);
   const autoPlayTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const resumeTimerRef = useRef<NodeJS.Timeout | null>(null);
   const pointerStartTimeRef = useRef(0);
 
   const total = photos.length;
@@ -126,20 +127,41 @@ export default function MobileMemoryReel({ photos, onSelectPhoto }: MobileMemory
     }
   }, []);
 
-  // Continuous auto-drift progression every 4.2 seconds
+  // Continuous auto-drift progression every 2.8 seconds
   const startAutoPlay = useCallback(() => {
     if (autoPlayTimerRef.current) clearInterval(autoPlayTimerRef.current);
+    if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
     if (!isAutoPlaying || isDragging) return;
 
     autoPlayTimerRef.current = setInterval(() => {
       setActiveIndex((prev) => (prev + 1) % total);
-    }, 4200);
+    }, 2800);
   }, [isAutoPlaying, isDragging, total]);
+
+  const scheduleAutoResume = useCallback(() => {
+    if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
+    if (!isAutoPlaying) return;
+    resumeTimerRef.current = setTimeout(() => {
+      startAutoPlay();
+    }, 2800);
+  }, [isAutoPlaying, startAutoPlay]);
+
+  const toggleAutoPlay = () => {
+    setIsAutoPlaying((prev) => {
+      const nextState = !prev;
+      if (!nextState) {
+        if (autoPlayTimerRef.current) clearInterval(autoPlayTimerRef.current);
+        if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
+      }
+      return nextState;
+    });
+  };
 
   useEffect(() => {
     startAutoPlay();
     return () => {
       if (autoPlayTimerRef.current) clearInterval(autoPlayTimerRef.current);
+      if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
     };
   }, [startAutoPlay]);
 
@@ -188,12 +210,13 @@ export default function MobileMemoryReel({ photos, onSelectPhoto }: MobileMemory
     setDragOffset(0);
     setIsDragging(false);
     isHorizontalSwipeRef.current = null;
-    setTimeout(startAutoPlay, 3200);
+    scheduleAutoResume();
   };
 
   // Mouse drag support
   const handleMouseDown = (e: React.MouseEvent) => {
     if (autoPlayTimerRef.current) clearInterval(autoPlayTimerRef.current);
+    if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
     touchStartXRef.current = e.clientX;
     pointerStartTimeRef.current = performance.now();
     setIsDragging(true);
@@ -216,21 +239,21 @@ export default function MobileMemoryReel({ photos, onSelectPhoto }: MobileMemory
     }
     setDragOffset(0);
     setIsDragging(false);
-    setTimeout(startAutoPlay, 3200);
+    scheduleAutoResume();
   };
 
   const goNext = () => {
     if (autoPlayTimerRef.current) clearInterval(autoPlayTimerRef.current);
     setActiveIndex((prev) => (prev + 1) % total);
     triggerHaptic();
-    setTimeout(startAutoPlay, 3200);
+    scheduleAutoResume();
   };
 
   const goPrev = () => {
     if (autoPlayTimerRef.current) clearInterval(autoPlayTimerRef.current);
     setActiveIndex((prev) => (prev - 1 + total) % total);
     triggerHaptic();
-    setTimeout(startAutoPlay, 3200);
+    scheduleAutoResume();
   };
 
   const visibleOffsets = [-2, -1, 0, 1, 2];
@@ -251,46 +274,111 @@ export default function MobileMemoryReel({ photos, onSelectPhoto }: MobileMemory
         WebkitUserSelect: "none",
       }}
     >
-      {/* ── Top Cinematic Milestone Pill ── */}
+      {/* ── Top Cinematic Control Bar: Milestone + Stop/Play Auto-Roll Button ── */}
       <div
         style={{
-          display: "inline-flex",
+          display: "flex",
           alignItems: "center",
+          justifyContent: "space-between",
+          width: "100%",
+          maxWidth: "500px",
+          padding: "0 10px 10px 10px",
+          boxSizing: "border-box",
           gap: "8px",
-          background: "linear-gradient(135deg, rgba(38, 9, 21, 0.95) 0%, rgba(18, 4, 12, 0.98) 100%)",
-          border: "1.2px solid rgba(255, 205, 75, 0.65)",
-          borderRadius: "24px",
-          padding: "5px 16px",
-          marginBottom: "12px",
-          boxShadow: "0 6px 20px rgba(0, 0, 0, 0.75), 0 0 14px rgba(255, 180, 40, 0.25)",
           zIndex: 10,
         }}
       >
-        <span style={{ fontSize: "0.85rem", filter: "drop-shadow(0 0 4px #ffd700)" }}>🎞️</span>
-        <span
+        {/* Milestone Era Badge */}
+        <div
           style={{
-            color: "#fef08a",
-            fontSize: "0.75rem",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "6px",
+            background: "linear-gradient(135deg, rgba(38, 9, 21, 0.95) 0%, rgba(18, 4, 12, 0.98) 100%)",
+            border: "1.2px solid rgba(255, 205, 75, 0.65)",
+            borderRadius: "24px",
+            padding: "5px 12px",
+            boxShadow: "0 6px 20px rgba(0, 0, 0, 0.75), 0 0 14px rgba(255, 180, 40, 0.25)",
+            minWidth: 0,
+            overflow: "hidden",
+            whiteSpace: "nowrap",
+          }}
+        >
+          <span style={{ fontSize: "0.85rem", filter: "drop-shadow(0 0 4px #ffd700)" }}>🎞️</span>
+          <span
+            style={{
+              color: "#fef08a",
+              fontSize: "0.74rem",
+              fontWeight: 800,
+              letterSpacing: "0.06em",
+              textTransform: "uppercase",
+              fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {activePhoto.milestoneEra || "Cherished Milestone"}
+          </span>
+          <span style={{ color: "rgba(255, 215, 0, 0.4)", fontSize: "0.72rem" }}>|</span>
+          <span
+            style={{
+              color: "#ffd700",
+              fontSize: "0.72rem",
+              fontFamily: "'Courier New', Courier, monospace",
+              fontWeight: 700,
+              letterSpacing: "0.05em",
+              flexShrink: 0,
+            }}
+          >
+            {String(activeIndex + 1).padStart(2, "0")}/{String(total).padStart(2, "0")}
+          </span>
+        </div>
+
+        {/* Prominent Stop / Play Auto-Roll Button */}
+        <button
+          type="button"
+          onClick={toggleAutoPlay}
+          aria-label={isAutoPlaying ? "Stop automatic reel motion" : "Start automatic reel motion"}
+          style={{
+            background: isAutoPlaying
+              ? "linear-gradient(135deg, rgba(60, 16, 28, 0.95) 0%, rgba(30, 6, 14, 0.98) 100%)"
+              : "linear-gradient(135deg, rgba(20, 55, 28, 0.95) 0%, rgba(10, 30, 14, 0.98) 100%)",
+            border: isAutoPlaying
+              ? "1.2px solid rgba(255, 140, 40, 0.85)"
+              : "1.2px solid rgba(74, 222, 128, 0.85)",
+            borderRadius: "20px",
+            padding: "5px 12px",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "5px",
+            color: isAutoPlaying ? "#ffd700" : "#86efac",
+            fontSize: "0.72rem",
             fontWeight: 800,
-            letterSpacing: "0.08em",
-            textTransform: "uppercase",
-            fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-          }}
-        >
-          {activePhoto.milestoneEra || "Cherished Milestone"}
-        </span>
-        <span style={{ color: "rgba(255, 215, 0, 0.4)", fontSize: "0.75rem" }}>|</span>
-        <span
-          style={{
-            color: "#ffd700",
-            fontSize: "0.74rem",
+            cursor: "pointer",
             fontFamily: "'Courier New', Courier, monospace",
-            fontWeight: 700,
-            letterSpacing: "0.05em",
+            letterSpacing: "0.04em",
+            boxShadow: "0 4px 14px rgba(0, 0, 0, 0.7)",
+            flexShrink: 0,
+            touchAction: "manipulation",
           }}
         >
-          {String(activeIndex + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
-        </span>
+          <span style={{ fontSize: "0.78rem" }}>{isAutoPlaying ? "⏸" : "▶"}</span>
+          <span>{isAutoPlaying ? "PAUSE" : "AUTO ROLL"}</span>
+          {isAutoPlaying && (
+            <span
+              style={{
+                width: "6px",
+                height: "6px",
+                borderRadius: "50%",
+                background: "#ff4444",
+                boxShadow: "0 0 8px #ff4444",
+                display: "inline-block",
+                animation: "pulseDot 1.2s infinite ease-in-out",
+              }}
+            />
+          )}
+        </button>
       </div>
 
       {/* ══════════════════════════════════════════════════════════════════
@@ -324,6 +412,24 @@ export default function MobileMemoryReel({ photos, onSelectPhoto }: MobileMemory
           edgeText={`▲ ${String(activeIndex + 1).padStart(3, "0")}A`}
           isTop={true}
         />
+
+        {/* ── Auto-Play Laser Film Progress Bar ── */}
+        {isAutoPlaying && !isDragging && (
+          <div
+            key={activeIndex}
+            style={{
+              position: "absolute",
+              top: "26px",
+              left: 0,
+              height: "2.5px",
+              background: "linear-gradient(90deg, #ffd700 0%, #ff8c00 60%, #ff2d55 100%)",
+              boxShadow: "0 0 10px rgba(255, 215, 0, 0.95), 0 0 4px #ff2d55",
+              zIndex: 28,
+              animation: "reelProgressBar 2.8s linear forwards",
+              pointerEvents: "none",
+            }}
+          />
+        )}
 
         {/* ── Film Frames Projection Chamber ── */}
         <div
@@ -415,7 +521,7 @@ export default function MobileMemoryReel({ photos, onSelectPhoto }: MobileMemory
                     if (autoPlayTimerRef.current) clearInterval(autoPlayTimerRef.current);
                     setActiveIndex((activeIndex + offset + total) % total);
                     triggerHaptic();
-                    setTimeout(startAutoPlay, 3200);
+                    scheduleAutoResume();
                   }
                 }}
                 style={{
@@ -428,7 +534,7 @@ export default function MobileMemoryReel({ photos, onSelectPhoto }: MobileMemory
                   filter: blur > 0 ? `blur(${blur}px) brightness(${isCenter ? 1 : 0.7})` : "none",
                   transition: isDragging
                     ? "none"
-                    : "transform 0.42s cubic-bezier(0.2, 0.9, 0.3, 1), opacity 0.3s ease, filter 0.3s ease, width 0.3s ease, height 0.3s ease",
+                    : "transform 0.55s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease, filter 0.35s ease, width 0.35s ease, height 0.35s ease",
                   cursor: "pointer",
                   willChange: "transform, opacity",
                   borderRadius: "2px", // Classic sharp film rectangle
@@ -761,7 +867,7 @@ export default function MobileMemoryReel({ photos, onSelectPhoto }: MobileMemory
                   if (autoPlayTimerRef.current) clearInterval(autoPlayTimerRef.current);
                   setActiveIndex(idx);
                   triggerHaptic();
-                  setTimeout(startAutoPlay, 3200);
+                  scheduleAutoResume();
                 }}
                 aria-label={`Jump to frame ${idx + 1}`}
                 style={{
@@ -796,7 +902,7 @@ export default function MobileMemoryReel({ photos, onSelectPhoto }: MobileMemory
           {/* Play/Pause Button */}
           <button
             type="button"
-            onClick={() => setIsAutoPlaying((prev) => !prev)}
+            onClick={toggleAutoPlay}
             style={{
               background: isAutoPlaying ? "rgba(70, 16, 26, 0.6)" : "rgba(255, 205, 75, 0.2)",
               border: isAutoPlaying

@@ -123,6 +123,32 @@ body {
   }
 }
 
+@keyframes reelProgressBar {
+  0% {
+    width: 0%;
+    opacity: 0.95;
+  }
+  94% {
+    width: 100%;
+    opacity: 1;
+  }
+  100% {
+    width: 100%;
+    opacity: 0;
+  }
+}
+
+@keyframes pulseDot {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(0.65);
+  }
+}
+
 /* ── Section blending — creates warm glow at section boundaries ── */
 /* Sections with semi-transparent backgrounds let the fixed starfield
    bleed through, while these pseudo-element halos soften the edges */
