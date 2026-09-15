@@ -42,6 +42,7 @@
 html {
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
+  cursor: default;
 }
 
 /* Touch Ergonomics & Text Wrapping Guard */
@@ -67,6 +68,55 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
   position: relative;
+  cursor: default;
+}
+
+/* ── Cursor Rules — Always Visible ───────────────────────────── */
+/* Ensure the system cursor is always shown. The butterfly is a decorative companion, not a replacement */
+button,
+a,
+[role="button"],
+.numpad-key,
+.filter-btn,
+.photo-card,
+input[type="button"],
+input[type="submit"],
+input[type="reset"] {
+  cursor: pointer;
+}
+
+input[type="text"],
+input[type="tel"],
+input[type="number"],
+input[type="password"],
+input[type="email"],
+textarea {
+  cursor: text;
+}
+
+/* ── Butterfly Cursor Companion — Animations ─────────────────── */
+/* Hide the butterfly companion on mobile touch screens — it's desktop only */
+@media (hover: none) and (pointer: coarse) {
+  .global-custom-cursor-host,
+  .global-cursor-picker-host {
+    display: none !important;
+  }
+}
+
+@keyframes globalButterflyFlutter {
+  0%, 100% { transform: scale(1) rotateY(0deg); }
+  50%       { transform: scale(0.88, 1.05) rotateY(42deg); }
+}
+
+@keyframes globalAuraPulse {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(0.9);
+    opacity: 0.45;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.3);
+    opacity: 0.85;
+  }
 }
 
 /* ── Section blending — creates warm glow at section boundaries ── */

@@ -121,18 +121,18 @@ export default function PasscodeGate({ onUnlock }: PasscodeGateProps) {
     [isVerifying, playTone]
   );
 
-  // Global physical keyboard listener (typing 0-9, Backspace, C, Enter works anywhere)
+  // Global physical keyboard listener (only active while gate is shown)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (isVerifying) return;
-
+      // Only intercept digit keys and Backspace — don't swallow normal letter/tab/etc
       if (e.key >= "0" && e.key <= "9") {
         e.preventDefault();
         handleNumpadPress(e.key);
       } else if (e.key === "Backspace") {
         e.preventDefault();
         handleNumpadPress("⌫");
-      } else if (e.key === "Escape" || e.key.toLowerCase() === "c") {
+      } else if (e.key === "Delete") {
         e.preventDefault();
         handleNumpadPress("C");
       } else if (e.key === "Enter" && code.length === 4) {

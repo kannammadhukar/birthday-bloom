@@ -279,61 +279,6 @@ export default function GlobalButterflyTheme() {
 
   return (
     <>
-      {/* ── Global CSS: Ensure Visible and Interactive Cursors ── */}
-      <style jsx global>{`
-        /* Keep cursor 100% visible and responsive on all desktop and laptop screens */
-        html,
-        body {
-          cursor: default;
-        }
-
-        button,
-        a,
-        [role="button"],
-        input[type="button"],
-        input[type="submit"],
-        .numpad-key {
-          cursor: pointer !important;
-        }
-
-        input[type="text"],
-        input[type="tel"],
-        input[type="password"],
-        textarea {
-          cursor: text !important;
-        }
-
-        /* On mobile touch devices, hide artificial cursor & floating picker so they never obstruct reading or touch targets */
-        @media (hover: none) and (pointer: coarse), (max-width: 768px) {
-          .global-custom-cursor-host,
-          .global-cursor-picker-host {
-            display: none !important;
-          }
-        }
-
-        @keyframes globalButterflyFlutter {
-          0%,
-          100% {
-            transform: scale(1) rotateY(0deg);
-          }
-          50% {
-            transform: scale(0.88, 1.05) rotateY(42deg);
-          }
-        }
-
-        @keyframes globalAuraPulse {
-          0%,
-          100% {
-            transform: translate(-50%, -50%) scale(0.9);
-            opacity: 0.45;
-          }
-          50% {
-            transform: translate(-50%, -50%) scale(1.3);
-            opacity: 0.85;
-          }
-        }
-      `}</style>
-
       {/* ── 1. Full-Screen Floating Hearts Trail Canvas ── */}
       <canvas
         ref={trailCanvasRef}
@@ -343,7 +288,7 @@ export default function GlobalButterflyTheme() {
           width: "100vw",
           height: "100vh",
           pointerEvents: "none",
-          zIndex: 2147483646,
+          zIndex: 99990,
         }}
       />
 
@@ -353,14 +298,14 @@ export default function GlobalButterflyTheme() {
           className="global-custom-cursor-host"
           style={{
             position: "fixed",
-            left: cursorPos.x + 8,
-            top: cursorPos.y + 8,
+            left: cursorPos.x + 12,
+            top: cursorPos.y + 12,
             pointerEvents: "none",
-            zIndex: 2147483647,
+            zIndex: 99991,
             transform: `rotate(${cursorAngle}deg) scale(${isClicking ? 1.15 : (isOverInteractive ? 1.08 : 1)})`,
             opacity: 1,
-            transition: "transform 0.08s ease-out, opacity 0.15s ease",
-            willChange: "transform, left, top, opacity",
+            transition: "transform 0.08s ease-out",
+            willChange: "transform, left, top",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
