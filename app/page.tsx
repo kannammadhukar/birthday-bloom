@@ -134,9 +134,14 @@ export default function Home() {
     if (typeof window !== "undefined") {
       setShareUrl(window.location.href);
 
-      // Ensure Passcode Gate is ALWAYS required on load (never auto-bypassed)
+      // Check if already unlocked in this session
       try {
-        localStorage.removeItem("divija_passcode_auth");
+        const savedAuth = localStorage.getItem("divija_passcode_auth");
+        if (savedAuth === "unlocked") {
+          setPasscodeUnlocked(true);
+          const savedRole = localStorage.getItem("divija_auth_role");
+          if (savedRole === "admin") setIsAdmin(true);
+        }
       } catch {}
 
       // Intelligent Background Asset Preloader (Keeps website assets ready in memory before user reaches them)

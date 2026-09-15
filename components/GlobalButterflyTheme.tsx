@@ -288,24 +288,24 @@ export default function GlobalButterflyTheme() {
           width: "100vw",
           height: "100vh",
           pointerEvents: "none",
-          zIndex: 99990,
+          zIndex: 10000001,
         }}
       />
 
-      {/* ── 2. High-Definition Fluttering Pink Butterfly Cursor Companion ── */}
+      {/* ── 2. High-Definition Fluttering Pink Butterfly Cursor ── */}
       {hasPointerMoved && (
         <div
           className="global-custom-cursor-host"
           style={{
             position: "fixed",
-            left: cursorPos.x + 12,
-            top: cursorPos.y + 12,
+            left: cursorPos.x,
+            top: cursorPos.y,
             pointerEvents: "none",
-            zIndex: 99991,
-            transform: `rotate(${cursorAngle}deg) scale(${isClicking ? 1.15 : (isOverInteractive ? 1.08 : 1)})`,
+            zIndex: 10000002,
+            transform: `translate(-50%, -50%) rotate(${cursorAngle}deg) scale(${isClicking ? 1.18 : (isOverInteractive ? 1.1 : 1)})`,
             opacity: 1,
-            transition: "transform 0.08s ease-out",
-            willChange: "transform, left, top",
+            transition: "transform 0.08s ease-out, opacity 0.15s ease",
+            willChange: "transform, left, top, opacity",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -389,7 +389,7 @@ export default function GlobalButterflyTheme() {
           position: "fixed",
           bottom: "16px",
           left: "16px",
-          zIndex: 99999,
+          zIndex: 10000003,
           pointerEvents: "auto",
         }}
       >

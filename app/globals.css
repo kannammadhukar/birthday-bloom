@@ -71,31 +71,19 @@ body {
   cursor: default;
 }
 
-/* ── Cursor Rules — Always Visible ───────────────────────────── */
-/* Ensure the system cursor is always shown. The butterfly is a decorative companion, not a replacement */
-button,
-a,
-[role="button"],
-.numpad-key,
-.filter-btn,
-.photo-card,
-input[type="button"],
-input[type="submit"],
-input[type="reset"] {
-  cursor: pointer;
+/* ── Custom Butterfly Cursor & Floating Hearts Transition ────── */
+/* On desktop, the high-definition fluttering pink butterfly is the cursor */
+@media (hover: hover) and (pointer: fine) {
+  html,
+  body,
+  *,
+  *::before,
+  *::after {
+    cursor: none !important;
+  }
 }
 
-input[type="text"],
-input[type="tel"],
-input[type="number"],
-input[type="password"],
-input[type="email"],
-textarea {
-  cursor: text;
-}
-
-/* ── Butterfly Cursor Companion — Animations ─────────────────── */
-/* Hide the butterfly companion on mobile touch screens — it's desktop only */
+/* On touch-only mobile devices, disable artificial cursor host */
 @media (hover: none) and (pointer: coarse) {
   .global-custom-cursor-host,
   .global-cursor-picker-host {
