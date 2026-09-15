@@ -413,6 +413,7 @@ body {
   box-shadow: 0 0 45px rgba(107, 20, 34, 0.3), 0 0 25px rgba(212, 175, 55, 0.15), inset 0 0 40px rgba(212, 175, 55, 0.04);
   display: flex; flex-direction: column;
 }
+.cake-canvas-container-box,
 #cake-canvas-container {
   width: 100%; height: auto; min-height: 380px; position: relative;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -1040,21 +1041,103 @@ input[type="range"]::-moz-range-track {
   right: max(var(--safe-right), 16px) !important;
 }
 
-/* Tablet & Mobile Uncompressed Spacing (Freely fittable without tightness) */
+/* Tablet & Mobile Single-Screen Viewport Fit (No vertical cutoffs) */
 @media (max-width: 768px) {
   .hero-section {
-    padding: 32px 18px !important;
-    gap: 24px !important;
-    min-height: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+    align-items: center !important;
+    padding: 6px 12px 10px !important;
+    gap: 6px !important;
+    min-height: calc(100dvh - 54px) !important;
+    max-height: calc(100dvh - 54px) !important;
+    height: calc(100dvh - 54px) !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+  .hero-text {
+    margin: 0 !important;
+    padding: 0 !important;
+    text-align: center !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    flex-shrink: 0 !important;
+  }
+  .hero-tag {
+    display: none !important;
+  }
+  .hero-title {
+    font-size: clamp(1.12rem, 4.8vw, 1.42rem) !important;
+    margin: 0 0 2px 0 !important;
+    line-height: 1.15 !important;
+    white-space: nowrap !important;
+  }
+  .script-sub {
+    display: inline !important;
+    font-size: clamp(1.22rem, 5.2vw, 1.55rem) !important;
+    margin-left: 6px !important;
+  }
+  .hero-subtitle {
+    font-size: 0.76rem !important;
+    margin-top: 1px !important;
+    margin-bottom: 2px !important;
+    opacity: 0.85 !important;
+  }
+  .cake-card {
+    flex: 1 !important;
+    width: 100% !important;
+    max-width: 480px !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    border-radius: 20px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    overflow: hidden !important;
+    position: relative !important;
+    box-sizing: border-box !important;
+  }
+  .cake-canvas-container-box,
+  #cake-canvas-container {
+    flex: 1 !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    position: relative !important;
+    display: flex !important;
+    flex-direction: column !important;
+    padding-bottom: 0 !important;
+  }
+  .live-cake-wrapper {
+    height: 100% !important;
+    flex: 1 !important;
+    min-height: 0 !important;
+    justify-content: space-between !important;
+  }
+  #cake-three-canvas-container {
+    height: 100% !important;
+    max-height: calc(100% - 66px) !important;
+    flex: 1 !important;
+    min-height: 0 !important;
+  }
+  .cake-controls-dock-responsive {
+    padding: 3px 8px !important;
+    gap: 5px !important;
+  }
+  .cake-controls-dock-responsive button {
+    padding: 6px 12px !important;
+    font-size: 0.78rem !important;
   }
   .tribute-section {
-    padding: 40px 18px !important;
+    padding: 36px 14px !important;
   }
   .game-section {
-    padding: 40px 14px !important;
+    padding: 36px 14px !important;
   }
   .gallery-section {
-    padding: 36px 14px !important;
+    padding: 32px 14px !important;
   }
   .wishes-section {
     padding: 20px 14px 60px !important;
@@ -1066,35 +1149,20 @@ input[type="range"]::-moz-range-track {
 
 @media (max-width: 480px) {
   .hero-section {
-    padding: 20px 12px !important;
-    gap: 18px !important;
+    padding: 4px 10px 8px !important;
+    gap: 4px !important;
   }
   .hero-title {
-    font-size: clamp(1.8rem, 8vw, 2.4rem) !important;
+    font-size: clamp(1.02rem, 4.6vw, 1.32rem) !important;
   }
   .script-sub {
-    font-size: clamp(2rem, 9vw, 2.7rem) !important;
+    font-size: clamp(1.12rem, 5vw, 1.42rem) !important;
   }
   .cake-card {
-    border-radius: 18px !important;
-  }
-  #cake-canvas-container {
-    min-height: 320px !important;
-  }
-  .tribute-section {
-    padding: 28px 10px !important;
-  }
-  .game-section {
-    padding: 28px 10px !important;
-  }
-  .gallery-section {
-    padding: 28px 10px !important;
+    border-radius: 16px !important;
   }
   .photo-grid {
     gap: 8px !important;
-  }
-  .wishes-section {
-    padding: 16px 10px 60px !important;
   }
   .wish-card {
     padding: 12px 14px !important;

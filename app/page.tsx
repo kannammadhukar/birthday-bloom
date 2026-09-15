@@ -365,35 +365,22 @@ export default function Home() {
     return () => clearInterval(pollTimer);
   }, [isAdmin, adminPreviewAsGuest]);
 
-  // Audio synth
+  // Top Header Audio Control: Mute / Unmute Samajavaragamana seamlessly
   function toggleAudio() {
-    if (playingRef.current) {
-      playingRef.current = false;
-      audioCtxRef.current?.close().catch(() => {});
-      audioCtxRef.current = null;
+    if (!medleyAudioRef.current) return;
+    if (medleyAudioRef.current.paused || medleyAudioRef.current.muted) {
+      medleyAudioRef.current.muted = false;
+      stopTributeVideo();
+      medleyAudioRef.current.play().then(() => {
+        setIsMedleyPlaying(true);
+        setIsPlaying(true);
+      }).catch(() => {});
+    } else {
+      medleyAudioRef.current.muted = true;
+      medleyAudioRef.current.pause();
+      setIsMedleyPlaying(false);
       setIsPlaying(false);
-      return;
     }
-    try {
-      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      audioCtxRef.current = ctx;
-      playingRef.current = true;
-      setIsPlaying(true);
-      const notes = [261.63,293.66,329.63,349.23,392.00,440.00,493.88,523.25];
-      let idx = 0;
-      (function play() {
-        if (!playingRef.current) return;
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = "sine";
-        osc.frequency.setValueAtTime(notes[idx++ % notes.length], ctx.currentTime);
-        gain.gain.setValueAtTime(0.08, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.2);
-        osc.connect(gain); gain.connect(ctx.destination);
-        osc.start(); osc.stop(ctx.currentTime + 1.2);
-        setTimeout(play, 800);
-      })();
-    } catch {}
   }
 
   // Divija's Admin Controls: Lock Website
@@ -677,7 +664,7 @@ export default function Home() {
           <div id="cake-experience-card" className="cake-card" style={{ position: "relative", background: "rgba(24, 10, 18, 0.76)", borderColor: "rgba(251, 113, 133, 0.35)" }}>
             <SectionButterfly id="cake-gold" top="14px" left="18px" size={44} theme="gold" tilt={-12} floatDelay={0.4} />
             <SectionButterfly id="cake-rose" top="22px" right="22px" size={42} theme="rose" tilt={16} floatDelay={1.2} />
-            <div id="cake-canvas-container" style={{ height: "auto", minHeight: "380px", paddingBottom: "6px" }}>
+            <div id="cake-canvas-container" className="cake-canvas-container-box">
               <LiveCakeExperience
                 candlesBlown={candlesBlown}
                 onToggleBlow={handleBlowCandles}
@@ -1630,90 +1617,6 @@ export default function Home() {
           </div>
         </div>
       )}
-
-      {/* ── Persistent Floating Audio Widget for Entire Website ── */}
-      <div
-        className="website-audio-floating-pill floating-music-bar"
-        style={{
-          position: "fixed",
-          bottom: "20px",
-          right: "20px",
-          zIndex: 9998,
-          background: "rgba(22, 8, 16, 0.90)",
-          backdropFilter: "blur(14px)",
-          WebkitBackdropFilter: "blur(14px)",
-          border: "1.5px solid rgba(212, 175, 55, 0.6)",
-          borderRadius: "32px",
-          padding: "6px 14px",
-          display: "flex",
-          alignItems: "center",
-          gap: "10px",
-          boxShadow: "0 8px 30px rgba(0, 0, 0, 0.6), 0 0 16px rgba(212, 175, 55, 0.3)",
-          transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-        }}
-      >
-        <div
-          style={{
-            width: 30,
-            height: 30,
-            borderRadius: "50%",
-            background: isMedleyPlaying
-              ? "radial-gradient(circle, #fcd34d 0%, #d4af37 55%, #80182a 100%)"
-              : "rgba(212, 175, 55, 0.25)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: "1rem",
-            boxShadow: isMedleyPlaying ? "0 0 14px rgba(212, 175, 55, 0.8)" : "none",
-            animation: isMedleyPlaying ? "spin 3.5s linear infinite" : "none",
-            border: "1px solid rgba(212, 175, 55, 0.7)",
-            flexShrink: 0,
-          }}
-        >
-          {isMedleyPlaying ? currentTrack.icon : "🎶"}
-        </div>
-        <div
-          style={{ display: "flex", flexDirection: "column" }}
-        >
-          <span style={{ fontSize: "0.78rem", fontWeight: 800, color: "#fff6d6", display: "flex", alignItems: "center", gap: "4px" }}>
-            👑 Samajavaragamana
-          </span>
-          <span style={{ fontSize: "0.62rem", color: isMedleyPlaying ? "#4ade80" : "rgba(243, 229, 171, 0.75)" }}>
-            {isMedleyPlaying ? "Playing Website Theme 🎶" : "Tap ▶ to play across website"}
-          </span>
-        </div>
-        <button
-          type="button"
-          onClick={() => {
-            if (!medleyAudioRef.current) return;
-            if (isMedleyPlaying) {
-              medleyAudioRef.current.pause();
-            } else {
-              stopTributeVideo();
-              medleyAudioRef.current.play().then(() => setIsMedleyPlaying(true)).catch(() => {});
-            }
-          }}
-          style={{
-            background: isMedleyPlaying
-              ? "linear-gradient(135deg, rgba(212, 175, 55, 0.45) 0%, rgba(128, 24, 42, 0.65) 100%)"
-              : "rgba(255, 255, 255, 0.12)",
-            border: "1px solid rgba(255, 215, 0, 0.75)",
-            borderRadius: "18px",
-            color: "#fff",
-            padding: "5px 12px",
-            fontSize: "0.76rem",
-            fontWeight: 800,
-            cursor: "pointer",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "4px",
-            boxShadow: isMedleyPlaying ? "0 0 10px rgba(212, 175, 55, 0.4)" : "none",
-          }}
-          title={isMedleyPlaying ? "Pause Website Music" : "Play Website Music"}
-        >
-          {isMedleyPlaying ? "⏸️ Pause" : "▶️ Play"}
-        </button>
-      </div>
 
       {/* ── AR Camera & Permissions Settings Modal ── */}
       <CameraSettingsModal

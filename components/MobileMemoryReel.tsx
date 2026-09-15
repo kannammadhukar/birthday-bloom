@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { PhotoItem } from "@/content/photos";
+import MobileSpiralGallery from "@/components/MobileSpiralGallery";
 
 interface MobileMemoryReelProps {
   photos: PhotoItem[];
@@ -8,6 +9,7 @@ interface MobileMemoryReelProps {
 }
 
 export default function MobileMemoryReel({ photos, onSelectPhoto }: MobileMemoryReelProps) {
+  const [viewMode, setViewMode] = useState<"spiral" | "reel">("spiral");
   const [activeIndex, setActiveIndex] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
   const [dragOffset, setDragOffset] = useState(0);
@@ -146,8 +148,83 @@ export default function MobileMemoryReel({ photos, onSelectPhoto }: MobileMemory
         WebkitUserSelect: "none",
       }}
     >
-      {/* ── Active Milestone Pill Badge ── */}
+      {/* ── Mode Toggle Switch (Spiral vs Linear Reel) ── */}
       <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+          background: "rgba(24, 6, 16, 0.92)",
+          backdropFilter: "blur(14px)",
+          border: "1.5px solid rgba(255, 215, 0, 0.5)",
+          borderRadius: "32px",
+          padding: "4px 8px",
+          marginBottom: "14px",
+          zIndex: 20,
+          boxShadow: "0 4px 16px rgba(0, 0, 0, 0.6)",
+        }}
+      >
+        <button
+          type="button"
+          onClick={() => setViewMode("spiral")}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "5px",
+            background:
+              viewMode === "spiral"
+                ? "linear-gradient(135deg, #ffd700, #b45309)"
+                : "transparent",
+            color: viewMode === "spiral" ? "#12020a" : "#fef08a",
+            fontWeight: 800,
+            fontSize: "0.76rem",
+            border: "none",
+            borderRadius: "20px",
+            padding: "5px 14px",
+            cursor: "pointer",
+            boxShadow:
+              viewMode === "spiral" ? "0 2px 10px rgba(255, 215, 0, 0.5)" : "none",
+            transition: "all 0.2s ease",
+          }}
+        >
+          <span>🌀</span>
+          <span>Cosmic Spiral</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setViewMode("reel")}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "5px",
+            background:
+              viewMode === "reel"
+                ? "linear-gradient(135deg, #ffd700, #b45309)"
+                : "transparent",
+            color: viewMode === "reel" ? "#12020a" : "#fef08a",
+            fontWeight: 800,
+            fontSize: "0.76rem",
+            border: "none",
+            borderRadius: "20px",
+            padding: "5px 14px",
+            cursor: "pointer",
+            boxShadow:
+              viewMode === "reel" ? "0 2px 10px rgba(255, 215, 0, 0.5)" : "none",
+            transition: "all 0.2s ease",
+          }}
+        >
+          <span>🎞️</span>
+          <span>Classic Reel</span>
+        </button>
+      </div>
+
+      {viewMode === "spiral" ? (
+        <MobileSpiralGallery onSelectPhoto={onSelectPhoto} />
+      ) : (
+        <>
+          {/* ── Active Milestone Pill Badge ── */}
+          <div
         style={{
           display: "inline-flex",
           alignItems: "center",
@@ -539,6 +616,8 @@ export default function MobileMemoryReel({ photos, onSelectPhoto }: MobileMemory
           👆 Swipe left/right
         </span>
       </div>
+        </>
+      )}
     </div>
   );
 }

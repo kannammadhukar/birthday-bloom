@@ -506,76 +506,7 @@ interface NostalgicScreenMemory {
   flower: "daisy" | "rose" | "cherry" | "lavender";
 }
 
-const NOSTALGIC_CARTOONS_TO_HEROINES: NostalgicScreenMemory[] = [
-  {
-    id: "brown_bear",
-    age: "Age 4–7",
-    era: "2007 · Childhood TV",
-    title: "Brown Bear & Masha 🐻",
-    characterBadge: "Cozy Morning Cartoons",
-    quote: "“Curled in a blanket with warm milk & biscuits, watching Little Brown Bear & giggling at Masha before school!” 🍯🧸",
-    icon: "🐻🍯",
-    colorScheme: {
-      bg: "linear-gradient(135deg, #fffbeb 0%, #fef3c7 70%, #fde68a 100%)",
-      border: "#fcd34d",
-      tape: "linear-gradient(90deg, #f59e0b, #fbbf24, #f59e0b)",
-      accent: "#b45309",
-    },
-    style: { bottom: "16px", left: "14%", width: "128px", height: "162px", rotate: "-6deg", delay: "0.5s" },
-    flower: "daisy",
-  },
-  {
-    id: "scooby_shaggy",
-    age: "Age 8–11",
-    era: "2011 · Cartoon Network",
-    title: "Scooby & Shaggy 🐕",
-    characterBadge: "The Mystery Machine Era",
-    quote: "“‘Zoinks!’ After-school Scooby marathons with sister — giant sandwich stacks, mystery clues, and non-stop laughter!” 🥪🔍",
-    icon: "🔍🐕",
-    colorScheme: {
-      bg: "linear-gradient(135deg, #ecfdf5 0%, #d1fae5 70%, #a7f3d0 100%)",
-      border: "#6ee7b7",
-      tape: "linear-gradient(90deg, #10b981, #34d399, #10b981)",
-      accent: "#047857",
-    },
-    style: { bottom: "-10px", left: "37%", width: "126px", height: "158px", rotate: "5deg", delay: "1.6s" },
-    flower: "lavender",
-  },
-  {
-    id: "hasini_geet",
-    age: "Age 12–16",
-    era: "2016 · Teen Cinema Obsession",
-    title: "Hasini & Geet 🌸",
-    characterBadge: "Bommarillu & Jab We Met",
-    quote: "“‘HaHa... Hasini!’ giggles & ‘Main apni favourite hoon’ attitude! Memorizing every dialogue and dancing in the mirror!” 💃💖",
-    icon: "💃✨",
-    colorScheme: {
-      bg: "linear-gradient(135deg, #fdf2f8 0%, #fce7f3 70%, #fbcfe8 100%)",
-      border: "#f472b6",
-      tape: "linear-gradient(90deg, #ec4899, #f472b6, #ec4899)",
-      accent: "#be185d",
-    },
-    style: { bottom: "-10px", right: "37%", width: "126px", height: "158px", rotate: "-4deg", delay: "2.1s" },
-    flower: "cherry",
-  },
-  {
-    id: "iconic_heroines",
-    age: "Age 17–23",
-    era: "Present · Real-Life Royalty",
-    title: "Sai Pallavi & Samantha 👑",
-    characterBadge: "Grace, Grit & Doctor Aura",
-    quote: "“Sai Pallavi's natural dimpled grace + Samantha's fierce ambition — real life Medico Divija poise!” 🩺🌺",
-    icon: "👑🩺",
-    colorScheme: {
-      bg: "linear-gradient(135deg, #fff1f2 0%, #ffe4e6 70%, #fecdd3 100%)",
-      border: "#fb7185",
-      tape: "linear-gradient(90deg, #e11d48, #fb7185, #e11d48)",
-      accent: "#9f1239",
-    },
-    style: { bottom: "16px", right: "14%", width: "128px", height: "162px", rotate: "7deg", delay: "2.9s" },
-    flower: "rose",
-  },
-];
+const NOSTALGIC_CARTOONS_TO_HEROINES: NostalgicScreenMemory[] = [];
 
 // Rich scrapbook ephemera matching the user's reference images for each chapter
 const CHAPTER_EPHEMERA = [
@@ -1734,42 +1665,6 @@ export default function JourneySection() {
             </div>
           ))}
 
-          {/* ── Centered Nostalgic Screen Diary Ribbon Under Book ── */}
-          <div
-            className="desktop-nostalgia-ribbon"
-            style={{
-              position: "absolute",
-              bottom: "6px",
-              left: "50%",
-              transform: "translateX(-50%)",
-              zIndex: 10,
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              padding: "6px 18px",
-              borderRadius: "24px",
-              background: "rgba(18, 10, 16, 0.88)",
-              backdropFilter: "blur(14px)",
-              border: "1px solid rgba(212, 175, 55, 0.45)",
-              color: "#fef08a",
-              fontFamily: "'Caveat', cursive",
-              fontSize: "0.95rem",
-              fontWeight: 700,
-              letterSpacing: "0.03em",
-              boxShadow: "0 8px 24px rgba(0,0,0,0.65), 0 0 16px rgba(212,175,55,0.2)",
-              pointerEvents: "auto",
-              whiteSpace: "nowrap",
-            }}
-          >
-            <span>📼 Divija&apos;s Screen Journey:</span>
-            <span style={{ color: "#fca5a5" }}>Brown Bear 🐻</span>
-            <span style={{ opacity: 0.5 }}>→</span>
-            <span style={{ color: "#86efac" }}>Scooby 🐕</span>
-            <span style={{ opacity: 0.5 }}>→</span>
-            <span style={{ color: "#f472b6" }}>Hasini 💃</span>
-            <span style={{ opacity: 0.5 }}>→</span>
-            <span style={{ color: "#ffd700" }}>Sai Pallavi & Samantha 👑</span>
-          </div>
         </div>
 
         {/* ── Soft Drifting Flower Petals Across Stage ── */}

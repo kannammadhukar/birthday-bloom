@@ -44,6 +44,7 @@ export default function LiveCakeExperience({
   const [faceDetected, setFaceDetected] = useState(false);
   const [isBlowingFace, setIsBlowingFace] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
+  const [isPositioning, setIsPositioning] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
 
   // ── Keepsake Modal, Photo & Video States ──
@@ -283,18 +284,21 @@ export default function LiveCakeExperience({
         ctx.fillRect(0, 0, 1280, 720);
       }
 
-      // 2. Draw 3D Three.js Cake Canvas directly in front of the Person
-      const webglCanvas = (document.getElementById("cake-three-canvas") ||
-        containerRef.current?.querySelector(".cake-three-canvas") ||
-        containerRef.current?.querySelector("canvas")) as HTMLCanvasElement | null;
+      // 2. Draw 3D Three.js Cake Canvas directly in front of the Person (Tabletop Position)
+      const cakeContainer = document.getElementById("cake-three-canvas-container") ||
+        document.getElementById("cake-three-canvas") ||
+        containerRef.current;
+      const webglCanvas = (cakeContainer?.tagName === "CANVAS"
+        ? cakeContainer
+        : cakeContainer?.querySelector("canvas")) as HTMLCanvasElement | null;
 
       if (webglCanvas && webglCanvas.width > 0 && webglCanvas.height > 0) {
         const cW = webglCanvas.width;
         const cH = webglCanvas.height;
         const cakeAspect = cW / cH;
 
-        // The cake rests at the bottom center of the frame, occupying ~72% of frame height
-        const targetCakeH = Math.round(720 * 0.72);
+        // The cake rests anchored at the bottom of the frame (~46% height) leaving the face clear
+        const targetCakeH = Math.round(720 * 0.46);
         let drawW = Math.round(targetCakeH * cakeAspect);
         let drawH = targetCakeH;
 
@@ -304,9 +308,13 @@ export default function LiveCakeExperience({
         }
 
         const drawX = Math.round((1280 - drawW) / 2);
-        const drawY = 720 - drawH;
+        const drawY = 720 - drawH - 24;
 
-        ctx.drawImage(webglCanvas, 0, 0, cW, cH, drawX, drawY, drawW, drawH);
+        try {
+          ctx.drawImage(webglCanvas, 0, 0, cW, cH, drawX, drawY, drawW, drawH);
+        } catch (err) {
+          console.warn("Could not draw cake to composite canvas:", err);
+        }
       }
 
       // 3. Draw In-Video Celebration Confetti (falling over human and cake)
@@ -426,18 +434,8 @@ export default function LiveCakeExperience({
           setCapturedVideoUrl(videoUrl);
           setActiveKeepsakeTab("video");
           setIsPhotoModalOpen(true);
-
-          // Automatic Video Download to device - exactly ONE video file!
-          try {
-            const ext = finalMime.includes("mp4") ? "mp4" : "webm";
-            const autoLink = document.createElement("a");
-            autoLink.href = videoUrl;
-            autoLink.download = `divija-23rd-birthday-celebration-${Date.now()}.${ext}`;
-            document.body.appendChild(autoLink);
-            autoLink.click();
-            document.body.removeChild(autoLink);
-            showToast("🎬 Celebration video recorded & saved! 👑✨");
-          } catch {}
+          // Keep video in browser memory preview - user can preview on-site and download only if they like!
+          showToast("🎬 Celebration video ready! Preview & view photo in the Keepsake viewer! 👑✨", 4000);
         }
       };
 
@@ -528,16 +526,19 @@ export default function LiveCakeExperience({
         ctx.fillRect(photoX, photoY, photoW, photoH);
       }
 
-      // 2. Draw 3D Three.js Cake Canvas directly on top (Preserving Aspect Ratio)
-      const webglCanvas = (document.getElementById("cake-three-canvas") ||
-        containerRef.current?.querySelector(".cake-three-canvas") ||
-        containerRef.current?.querySelector("canvas")) as HTMLCanvasElement | null;
+      // 2. Draw 3D Three.js Cake Canvas directly on top (Tabletop Position)
+      const cakeContainer = document.getElementById("cake-three-canvas-container") ||
+        document.getElementById("cake-three-canvas") ||
+        containerRef.current;
+      const webglCanvas = (cakeContainer?.tagName === "CANVAS"
+        ? cakeContainer
+        : cakeContainer?.querySelector("canvas")) as HTMLCanvasElement | null;
 
       if (webglCanvas && webglCanvas.width > 0 && webglCanvas.height > 0) {
         const cW = webglCanvas.width;
         const cH = webglCanvas.height;
         const cakeAspect = cW / cH;
-        const targetH = Math.round(photoH * 0.72);
+        const targetH = Math.round(photoH * 0.46);
         let drawW = Math.round(targetH * cakeAspect);
         let drawH = targetH;
         if (drawW > photoW) {
@@ -545,8 +546,12 @@ export default function LiveCakeExperience({
           drawH = Math.round(photoW / cakeAspect);
         }
         const drawX = photoX + Math.round((photoW - drawW) / 2);
-        const drawY = photoY + (photoH - drawH);
-        ctx.drawImage(webglCanvas, 0, 0, cW, cH, drawX, drawY, drawW, drawH);
+        const drawY = photoY + (photoH - drawH - 14);
+        try {
+          ctx.drawImage(webglCanvas, 0, 0, cW, cH, drawX, drawY, drawW, drawH);
+        } catch (err) {
+          console.warn("Could not draw cake to snapshot canvas:", err);
+        }
       }
 
       // 3. Ornate Gold Filigree Frame Border
@@ -621,7 +626,12 @@ export default function LiveCakeExperience({
         startVideoRecording();
       }
 
-      // Record 4.5 seconds of celebration through blowout, smoke, confetti & laughter
+      // Snap celebration photo with both Divija and the 3D cake at peak confetti
+      setTimeout(() => {
+        autoCaptureCelebrationSnap();
+      }, 1500);
+
+      // Record exactly 4.0 seconds of celebration through blowout, smoke, confetti & laughter
       setTimeout(() => {
         if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
           try {
@@ -630,10 +640,32 @@ export default function LiveCakeExperience({
             console.warn("Error stopping MediaRecorder:", err);
           }
         }
-      }, 4500);
+      }, 4000);
     },
     [onToggleBlow]
   );
+
+  // ── Unified 7-Second Pre-Roll & Video Recording Ceremony Flow ──
+  const startCelebrationRecordingFlow = useCallback(() => {
+    setIsPositioning(false);
+    startCompositeRenderLoop();
+    startVideoRecording(); // Start recording IMMEDIATELY so the entire 7 seconds are recorded!
+    setCountdown(7);
+
+    if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+    countdownIntervalRef.current = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev !== null && prev > 1) {
+          return prev - 1;
+        }
+        clearInterval(countdownIntervalRef.current);
+        countdownIntervalRef.current = null;
+        isArmedRef.current = true;
+        showToast("💨 NOW! Make your wish & blow out the candles! 🎂✨", 4000);
+        return null;
+      });
+    }, 1000);
+  }, []);
 
   // ── MediaPipe Face Landmarker Initializer ──
   async function initFaceLandmarker() {
@@ -886,24 +918,8 @@ export default function LiveCakeExperience({
 
       setCameraLoading(false);
       smoothAlign(containerRef.current);
-
-      // Start friendly 3-second countdown
-      setCountdown(3);
-      countdownIntervalRef.current = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev !== null && prev > 1) {
-            return prev - 1;
-          }
-          clearInterval(countdownIntervalRef.current);
-          isArmedRef.current = true;
-
-          // Start Video Recording of ceremony & laughter
-          startVideoRecording();
-
-          showToast("🎂 ARMED & RECORDING! Make your wish & blow the candles! 🎬✨");
-          return null;
-        });
-      }, 1000);
+      setIsPositioning(true);
+      showToast("📸 Position face above cake & hold steady! When ready, tap Start Celebration! 🎬✨", 4500);
     } else {
       setCameraLoading(false);
       isArmedRef.current = true;
@@ -933,6 +949,12 @@ export default function LiveCakeExperience({
   }
 
   function stopCamera() {
+    setIsPositioning(false);
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
+    }
+    setCountdown(null);
     stopFaceAnalysis();
     stopCompositeRenderLoop();
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
@@ -1086,44 +1108,101 @@ export default function LiveCakeExperience({
       className="live-cake-wrapper"
       style={{
         width: "100%",
+        height: "100%",
+        flex: 1,
+        minHeight: 0,
         position: "relative",
         borderRadius: "24px",
         overflow: "hidden",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        justifyContent: "center",
+        justifyContent: "space-between",
       }}
     >
-      {/* ── Friendly Step-Back Countdown Overlay ── */}
+      {/* ── Camera Stabilization & Hold Steady Placement Guide ── */}
+      {cameraActive && isPositioning && (
+        <div
+          style={{
+            position: "absolute",
+            top: "24%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            zIndex: 35,
+            background: "linear-gradient(145deg, rgba(28, 8, 20, 0.95) 0%, rgba(12, 2, 8, 0.98) 100%)",
+            backdropFilter: "blur(18px)",
+            WebkitBackdropFilter: "blur(18px)",
+            border: "2px solid #ffd166",
+            borderRadius: "26px",
+            padding: "20px 24px",
+            textAlign: "center",
+            boxShadow: "0 18px 50px rgba(0, 0, 0, 0.9), 0 0 35px rgba(255, 209, 102, 0.4)",
+            maxWidth: "92%",
+            width: "350px",
+            animation: "fadeIn 0.25s ease-out",
+          }}
+        >
+          <div style={{ fontSize: "2rem", marginBottom: "4px" }}>🎂✨</div>
+          <h3 style={{ color: "#ffd166", fontSize: "1.05rem", fontWeight: 800, margin: "0 0 6px", letterSpacing: "0.5px" }}>
+            Hold Camera Steady
+          </h3>
+          <p style={{ color: "rgba(243, 237, 225, 0.88)", fontSize: "0.82rem", margin: "0 0 16px", lineHeight: 1.35 }}>
+            Place phone or hold steady so your face is framed above the cake. When ready, tap below!
+          </p>
+          <button
+            type="button"
+            onClick={startCelebrationRecordingFlow}
+            style={{
+              width: "100%",
+              padding: "12px 20px",
+              borderRadius: "18px",
+              background: "linear-gradient(135deg, #d4af37 0%, #ffd700 50%, #b38728 100%)",
+              color: "#18040d",
+              fontWeight: 900,
+              fontSize: "0.95rem",
+              border: "none",
+              cursor: "pointer",
+              boxShadow: "0 6px 20px rgba(212, 175, 55, 0.5)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "8px",
+            }}
+          >
+            <span>🎬 Ready! Start 7s Celebration</span>
+          </button>
+        </div>
+      )}
+
+      {/* ── 7-Second Celebration Recording & Make a Wish Countdown Overlay ── */}
       {countdown !== null && (
         <div
           style={{
             position: "absolute",
-            top: "40%",
+            top: "28%",
             left: "50%",
             transform: "translate(-50%, -50%)",
-            zIndex: 30,
-            background: "rgba(18, 4, 14, 0.92)",
-            backdropFilter: "blur(16px)",
-            WebkitBackdropFilter: "blur(16px)",
-            border: "2px solid #ffd166",
-            borderRadius: "24px",
-            padding: "18px 28px",
+            zIndex: 35,
+            background: "rgba(18, 4, 14, 0.94)",
+            backdropFilter: "blur(18px)",
+            WebkitBackdropFilter: "blur(18px)",
+            border: "2.5px solid #ffd166",
+            borderRadius: "26px",
+            padding: "18px 30px",
             textAlign: "center",
-            boxShadow: "0 14px 40px rgba(0, 0, 0, 0.85), 0 0 30px rgba(255, 209, 102, 0.5)",
+            boxShadow: "0 16px 45px rgba(0, 0, 0, 0.9), 0 0 35px rgba(255, 209, 102, 0.55)",
             animation: "fadeIn 0.2s ease-out",
             pointerEvents: "none",
           }}
         >
-          <div style={{ fontSize: "0.8rem", color: "#ffd166", fontWeight: 800, letterSpacing: "2px" }}>
-            ✦ STEP BACK &amp; MAKE A WISH ✦
+          <div style={{ fontSize: "0.78rem", color: "#ffd166", fontWeight: 800, letterSpacing: "2px", textTransform: "uppercase" }}>
+            ✦ Recording Live · Smile with Cake ✦
           </div>
-          <div style={{ fontSize: "3.8rem", fontWeight: 900, color: "#ffffff", lineHeight: 1.1, margin: "2px 0" }}>
+          <div style={{ fontSize: "4.2rem", fontWeight: 900, color: "#ffffff", lineHeight: 1.05, margin: "4px 0", textShadow: "0 0 20px rgba(255, 209, 102, 0.8)" }}>
             {countdown}
           </div>
-          <div style={{ fontSize: "0.82rem", color: "#fbcfe8", fontWeight: 600 }}>
-            Fit yourself with the cake · Ready in {countdown}s!
+          <div style={{ fontSize: "0.85rem", color: "#fbcfe8", fontWeight: 700 }}>
+            {countdown > 3 ? "😊 Smile & make your 23rd birthday wish!" : "💨 Inhale & get ready to blow!"}
           </div>
         </div>
       )}
@@ -1236,11 +1315,18 @@ export default function LiveCakeExperience({
 
       {/* ── 3D Three.js Cake Canvas (Cake in Front of Person) ── */}
       <div
+        id="cake-three-canvas-container"
         style={{
           width: "100%",
-          height: "clamp(360px, 48vh, 480px)",
-          position: "relative",
+          flex: 1,
+          minHeight: 0,
+          height: cameraActive ? "clamp(240px, 40vh, 380px)" : "clamp(250px, 44vh, 440px)",
+          position: cameraActive ? "absolute" : "relative",
+          bottom: cameraActive ? "52px" : "auto",
+          left: 0,
+          right: 0,
           zIndex: 5,
+          pointerEvents: "auto",
         }}
       >
         <CakeScene
@@ -1254,6 +1340,25 @@ export default function LiveCakeExperience({
           }}
         />
       </div>
+
+      {/* ── AR Tabletop Pedestal Shadow (when camera active) ── */}
+      {cameraActive && (
+        <div
+          style={{
+            position: "absolute",
+            bottom: "48px",
+            left: "50%",
+            transform: "translateX(-50%)",
+            width: "360px",
+            maxWidth: "85%",
+            height: "40px",
+            background: "radial-gradient(ellipse at center, rgba(0,0,0,0.65) 0%, rgba(212,175,55,0.12) 40%, transparent 75%)",
+            borderRadius: "50%",
+            pointerEvents: "none",
+            zIndex: 4,
+          }}
+        />
+      )}
 
       {/* ── Clean, Simple Control Dock ── */}
       <div
@@ -1344,6 +1449,30 @@ export default function LiveCakeExperience({
               >
                 ⚙️
               </button>
+
+              {/* Keepsake Viewer Button: allows re-opening video & photo at any time */}
+              {(capturedVideoUrl || capturedPhotoUrl) && (
+                <button
+                  type="button"
+                  onClick={() => setIsPhotoModalOpen(true)}
+                  style={{
+                    padding: "8px 14px",
+                    borderRadius: "32px",
+                    border: "1.5px solid #ffd700",
+                    cursor: "pointer",
+                    background: "linear-gradient(135deg, rgba(212, 175, 55, 0.35) 0%, rgba(180, 83, 9, 0.45) 100%)",
+                    color: "#fef08a",
+                    fontWeight: 800,
+                    fontSize: "clamp(0.78rem, 1.3vw, 0.88rem)",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    boxShadow: "0 0 14px rgba(255, 215, 0, 0.4)",
+                  }}
+                >
+                  <span>🎬 View Keepsakes (Video & Photo)</span>
+                </button>
+              )}
 
               {/* 2. Manual Snap AR Photo Button (when camera is on) */}
               {cameraActive && (
@@ -1618,12 +1747,26 @@ export default function LiveCakeExperience({
                 style={{
                   color: "#fbcfe8",
                   fontSize: "clamp(0.78rem, 1.6vw, 0.88rem)",
-                  margin: 0,
+                  margin: "0 0 4px",
                   fontStyle: "italic",
                 }}
               >
-                Recorded live with AR: blowing the candles &amp; laughing in joy! ✨
+                Recorded live with AR: human &amp; 3D cake together! ✨
               </p>
+              <div
+                style={{
+                  fontSize: "0.74rem",
+                  color: "#fef08a",
+                  background: "rgba(255, 215, 0, 0.1)",
+                  border: "1px solid rgba(255, 215, 0, 0.3)",
+                  borderRadius: "14px",
+                  padding: "4px 10px",
+                  display: "inline-block",
+                  margin: "2px auto 0",
+                }}
+              >
+                👁️ Preview here anytime · Tap &apos;Download&apos; below only if you want to save to My Files!
+              </div>
             </div>
 
             {/* Tab Switcher: Video vs Photo */}
