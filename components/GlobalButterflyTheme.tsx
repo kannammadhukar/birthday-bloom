@@ -335,7 +335,7 @@ export default function GlobalButterflyTheme() {
           width: "100vw",
           height: "100vh",
           pointerEvents: "none",
-          zIndex: 10000001,
+          zIndex: 2147483646,
         }}
       />
 
@@ -348,7 +348,7 @@ export default function GlobalButterflyTheme() {
             left: cursorPos.x,
             top: cursorPos.y,
             pointerEvents: "none",
-            zIndex: 10000002,
+            zIndex: 2147483647,
             transform: `translate(-50%, -50%) rotate(${cursorAngle}deg) scale(${isClicking ? 0.9 : (isOverInteractive ? 1.18 : 1)})`,
             opacity: 1,
             transition: "transform 0.08s ease-out, opacity 0.15s ease",
@@ -438,7 +438,7 @@ export default function GlobalButterflyTheme() {
           position: "fixed",
           bottom: "16px",
           left: "16px",
-          zIndex: 10000003,
+          zIndex: 9999990,
           pointerEvents: "auto",
         }}
       >

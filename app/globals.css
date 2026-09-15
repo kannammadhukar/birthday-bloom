@@ -82,6 +82,20 @@ body {
   }
 }
 
+.global-custom-cursor-host {
+  pointer-events: none !important;
+  z-index: 2147483647 !important;
+}
+
+.global-trail-canvas {
+  pointer-events: none !important;
+  z-index: 2147483646 !important;
+}
+
+.global-cursor-picker-host {
+  z-index: 9999990 !important;
+}
+
 /* On touch-only mobile devices, keep cursor picker accessible and disable heavy trail canvas */
 @media (hover: none) and (pointer: coarse) {
   .global-trail-canvas {
@@ -89,6 +103,7 @@ body {
   }
   .global-custom-cursor-host {
     pointer-events: none !important;
+    z-index: 2147483647 !important;
   }
 }
 
