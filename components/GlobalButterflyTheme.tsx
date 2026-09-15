@@ -279,22 +279,28 @@ export default function GlobalButterflyTheme() {
 
   return (
     <>
-      {/* ── Global CSS Injection: Hide Default OS White Cursor on Desktop with Mouse ── */}
+      {/* ── Global CSS: Ensure Visible and Interactive Cursors ── */}
       <style jsx global>{`
-        /* Hide OS arrow only on desktop mouse pointers, leaving mobile touch unaffected */
-        @media (hover: hover) and (pointer: fine) {
-          html,
-          body,
-          *,
-          *::before,
-          *::after,
-          button,
-          a,
-          input,
-          select,
-          textarea {
-            cursor: none !important;
-          }
+        /* Keep cursor 100% visible and responsive on all desktop and laptop screens */
+        html,
+        body {
+          cursor: default;
+        }
+
+        button,
+        a,
+        [role="button"],
+        input[type="button"],
+        input[type="submit"],
+        .numpad-key {
+          cursor: pointer !important;
+        }
+
+        input[type="text"],
+        input[type="tel"],
+        input[type="password"],
+        textarea {
+          cursor: text !important;
         }
 
         /* On mobile touch devices, hide artificial cursor & floating picker so they never obstruct reading or touch targets */
@@ -337,21 +343,21 @@ export default function GlobalButterflyTheme() {
           width: "100vw",
           height: "100vh",
           pointerEvents: "none",
-          zIndex: 99998,
+          zIndex: 2147483646,
         }}
       />
 
-      {/* ── 2. High-Definition Fluttering Pink Butterfly Cursor ── */}
+      {/* ── 2. High-Definition Fluttering Pink Butterfly Cursor Companion ── */}
       {hasPointerMoved && (
         <div
           className="global-custom-cursor-host"
           style={{
             position: "fixed",
-            left: cursorPos.x,
-            top: cursorPos.y,
+            left: cursorPos.x + 8,
+            top: cursorPos.y + 8,
             pointerEvents: "none",
-            zIndex: 999998,
-            transform: `translate(-50%, -50%) rotate(${cursorAngle}deg) scale(${isClicking ? 1.15 : (isOverInteractive ? 1.08 : 1)})`,
+            zIndex: 2147483647,
+            transform: `rotate(${cursorAngle}deg) scale(${isClicking ? 1.15 : (isOverInteractive ? 1.08 : 1)})`,
             opacity: 1,
             transition: "transform 0.08s ease-out, opacity 0.15s ease",
             willChange: "transform, left, top, opacity",

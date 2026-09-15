@@ -356,13 +356,12 @@ export default function BirthdayGiftAnimation({
           font-family: 'Outfit', sans-serif;
           opacity: 1;
           transition: opacity 0.45s ease;
-          cursor: none !important;
         }
 
-        .gift-animation-wrapper *,
         .gift-animation-wrapper button,
-        .gift-animation-wrapper a {
-          cursor: none !important;
+        .gift-animation-wrapper a,
+        .gift-animation-wrapper [role="button"] {
+          cursor: pointer !important;
         }
 
         .custom-emoji-cursor-follower {
@@ -372,7 +371,7 @@ export default function BirthdayGiftAnimation({
           width: 48px;
           height: 48px;
           pointer-events: none;
-          z-index: 99999;
+          z-index: 2147483647;
           display: flex;
           align-items: center;
           justify-content: center;
