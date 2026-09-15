@@ -134,14 +134,10 @@ export default function Home() {
     if (typeof window !== "undefined") {
       setShareUrl(window.location.href);
 
-      // Check if already unlocked in this session
+      // Reset any saved unlock tokens so the Royal Premiere Passcode screen always shows
       try {
-        const savedAuth = localStorage.getItem("divija_passcode_auth");
-        if (savedAuth === "unlocked") {
-          setPasscodeUnlocked(true);
-          const savedRole = localStorage.getItem("divija_auth_role");
-          if (savedRole === "admin") setIsAdmin(true);
-        }
+        localStorage.removeItem("divija_passcode_auth");
+        localStorage.removeItem("divija_auth_role");
       } catch {}
 
       // Intelligent Background Asset Preloader (Keeps website assets ready in memory before user reaches them)
