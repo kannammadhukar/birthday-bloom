@@ -298,17 +298,19 @@ export default function GlobalButterflyTheme() {
           className="global-custom-cursor-host"
           style={{
             position: "fixed",
-            left: cursorPos.x + 10,
-            top: cursorPos.y + 10,
+            left: cursorPos.x,
+            top: cursorPos.y,
             pointerEvents: "none",
             zIndex: 10000002,
-            transform: `rotate(${cursorAngle}deg) scale(${isClicking ? 1.15 : (isOverInteractive ? 1.08 : 1)})`,
+            transform: `translate(-50%, -50%) rotate(${cursorAngle}deg) scale(${isClicking ? 0.9 : (isOverInteractive ? 1.18 : 1)})`,
             opacity: 1,
             transition: "transform 0.08s ease-out, opacity 0.15s ease",
             willChange: "transform, left, top, opacity",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
+            userSelect: "none",
+            WebkitUserSelect: "none",
           }}
         >
           {cursorEmoji === "🦋" ? (

@@ -71,29 +71,15 @@ body {
   cursor: default;
 }
 
-/* ── Visible Interactive Cursors ────────────────────────────── */
-html, body {
-  cursor: default;
-}
-
-button,
-a,
-[role="button"],
-.numpad-key,
-.filter-btn,
-.photo-card,
-input[type="button"],
-input[type="submit"],
-input[type="reset"] {
-  cursor: pointer;
-}
-
-input[type="text"],
-input[type="tel"],
-input[type="number"],
-input[type="password"],
-textarea {
-  cursor: text;
+/* ── Butterfly Custom Cursor (hide default system cursor on desktop) ── */
+@media (hover: hover) and (pointer: fine) {
+  html,
+  body,
+  *,
+  *::before,
+  *::after {
+    cursor: none !important;
+  }
 }
 
 /* On touch-only mobile devices, disable artificial cursor host */
