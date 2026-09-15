@@ -16,6 +16,7 @@ if (typeof window !== "undefined") {
   };
 }
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import CakeScene, { CakeTransform } from "./three/CakeScene";
 import confetti from "canvas-confetti";
 import { smoothAlign } from "@/lib/autoAlign";
@@ -53,6 +54,10 @@ export default function LiveCakeExperience({
   const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
   const [activeKeepsakeTab, setActiveKeepsakeTab] = useState<"video" | "photo">("video");
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // ── Cake Slice & Cutting States ──
   const [sliced, setSliced] = useState(false);
@@ -672,9 +677,8 @@ export default function LiveCakeExperience({
           const videoUrl = URL.createObjectURL(blob);
           setCapturedVideoUrl(videoUrl);
           setActiveKeepsakeTab("video");
-          setIsPhotoModalOpen(true);
-          // Keep video in browser memory preview - user can preview on-site and download only if they like!
-          showToast("🎬 Celebration video ready! Preview & view photo in the Keepsake viewer! 👑✨", 4000);
+          // Keep video saved in state for on-demand review without interrupting celebration screen
+          showToast("🎬 Celebration video & photo saved! Tap 'View Video & Photo' to preview! 👑✨", 3500);
         }
       };
 
@@ -838,15 +842,14 @@ export default function LiveCakeExperience({
       setCapturedPhotoUrl(dataUrl);
       setIsCapturing(false);
 
-      // Open Modal to present the souvenir (NO autoDownload - purely in modal preview!)
-      setIsPhotoModalOpen(true);
+      // Save photo in state quietly without popping up unrequested modal over user screen
       setActiveKeepsakeTab("photo");
     } catch {
       setIsCapturing(false);
     }
   }, [cameraActive, facingMode]);
 
-  // ── Unified Blow Trigger: Records 4.5s Celebration Video (Single Video, Zero Photo Spam) ──
+  // ── Unified Blow Trigger: Extinguishes Candles with Confetti & Music ──
   const triggerBlowSuccess = useCallback(
     (reasonMsg?: string) => {
       // Synchronous ironclad guard to prevent runaway duplicate triggers
@@ -862,31 +865,33 @@ export default function LiveCakeExperience({
       onToggleBlow();
       showToast(reasonMsg || "💨 Candles blown out! Divija's wish is granted! 👑✨");
       fireCelebrationConfetti();
-      triggerVideoConfetti(); // Renders confetti in composite video over both human and cake!
+      triggerVideoConfetti();
 
-      // Ensure composite render loop and video recording are active
-      startCompositeRenderLoop();
-      if (!isRecordingRef.current || !mediaRecorderRef.current || mediaRecorderRef.current.state !== "recording") {
-        startVideoRecording();
-      }
-
-      // Snap celebration photo with both Divija and the 3D cake at peak confetti
-      setTimeout(() => {
-        autoCaptureCelebrationSnap();
-      }, 1500);
-
-      // Record exactly 4.0 seconds of celebration through blowout, smoke, confetti & laughter
-      setTimeout(() => {
-        if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
-          try {
-            mediaRecorderRef.current.stop();
-          } catch (err) {
-            console.warn("Error stopping MediaRecorder:", err);
-          }
+      // Only perform AR composite video recording if user actually activated the camera
+      if (cameraActive) {
+        startCompositeRenderLoop();
+        if (!isRecordingRef.current || !mediaRecorderRef.current || mediaRecorderRef.current.state !== "recording") {
+          startVideoRecording();
         }
-      }, 4000);
+
+        // Snap commemorative AR photo at peak celebration
+        setTimeout(() => {
+          autoCaptureCelebrationSnap();
+        }, 1500);
+
+        // Record exactly 4.0 seconds of celebration
+        setTimeout(() => {
+          if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+            try {
+              mediaRecorderRef.current.stop();
+            } catch (err) {
+              console.warn("Error stopping MediaRecorder:", err);
+            }
+          }
+        }, 4000);
+      }
     },
-    [onToggleBlow]
+    [cameraActive, onToggleBlow]
   );
 
   // ── Unified 7-Second Pre-Roll & Video Recording Ceremony Flow ──
@@ -2274,20 +2279,23 @@ export default function LiveCakeExperience({
       </div>
 
       {/* ── Celebratory Keepsake Modal (Video Clip & Photo) ── */}
-      {isPhotoModalOpen && (capturedVideoUrl || capturedPhotoUrl) && (
+      {isMounted && isPhotoModalOpen && (capturedVideoUrl || capturedPhotoUrl) && typeof document !== "undefined" && createPortal(
         <div
+          id="keepsake-preview-portal-modal"
           style={{
             position: "fixed",
             inset: 0,
-            zIndex: 9999,
-            backgroundColor: "rgba(10, 2, 8, 0.88)",
-            backdropFilter: "blur(14px)",
-            WebkitBackdropFilter: "blur(14px)",
+            zIndex: 2147483647,
+            backgroundColor: "rgba(10, 2, 8, 0.85)",
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             padding: "16px",
             animation: "fadeIn 0.3s ease-out",
+            overflowY: "auto",
+            touchAction: "auto",
           }}
           onClick={() => setIsPhotoModalOpen(false)}
         >
@@ -2295,16 +2303,19 @@ export default function LiveCakeExperience({
             style={{
               background: "linear-gradient(145deg, #220818 0%, #16040e 100%)",
               border: "2px solid rgba(255, 209, 102, 0.65)",
-              borderRadius: "28px",
+              borderRadius: "24px",
               padding: "20px",
-              maxWidth: "680px",
+              maxWidth: "640px",
               width: "100%",
+              maxHeight: "90vh",
+              overflowY: "auto",
               boxShadow: "0 20px 60px rgba(0,0,0,0.85), 0 0 30px rgba(212, 175, 55, 0.35)",
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
               gap: "14px",
               position: "relative",
+              boxSizing: "border-box",
             }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -2544,7 +2555,8 @@ export default function LiveCakeExperience({
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       <style jsx>{`
