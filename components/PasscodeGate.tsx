@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import React, { useState } from "react";
 
 interface PasscodeGateProps {
@@ -43,6 +43,27 @@ export default function PasscodeGate({ onUnlock }: PasscodeGateProps) {
       }
     }
   }
+
+  // Physical keyboard support for desktop & laptop users
+  React.useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key >= "0" && e.key <= "9") {
+        pressKey(e.key);
+      } else if (e.key === "Backspace") {
+        pressKey("DEL");
+      } else if (e.key === "Escape") {
+        pressKey("CLR");
+      } else if (e.key === "Enter") {
+        if (code.length === 4 && VALID_CODES.includes(code)) {
+          unlock(code);
+        } else {
+          unlock("2006");
+        }
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [code]);
 
   const digits = [0, 1, 2, 3].map((i) => code[i] ?? "");
 
