@@ -855,7 +855,7 @@ export default function Home() {
                 src="/videos/divija_jugraafiya_exact.mp4"
                 controls
                 playsInline
-                preload="metadata"
+                preload="none"
                 style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
                 onPlay={() => {
                   smoothAlign("#tribute-video-section");
@@ -1051,7 +1051,7 @@ export default function Home() {
                 }}
               >
                 <div className="photo-img-box">
-                  <img src={p.src} alt={p.shortLabel || p.tagline} loading="lazy"
+                  <img src={p.src} alt={p.shortLabel || p.tagline} loading="lazy" decoding="async"
                     onError={e => { (e.target as HTMLImageElement).src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='250'%3E%3Crect fill='%23374151' width='200' height='250'/%3E%3Ctext x='50%25' y='50%25' fill='%236b7280' font-size='14' text-anchor='middle' dy='.3em'%3EPhoto%3C/text%3E%3C/svg%3E"; }}
                   />
                   {/* Chic 1-2 words representation badge - clean photo view */}
