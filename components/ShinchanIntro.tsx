@@ -110,8 +110,33 @@ export default function ShinchanIntro({ onDone }: Props) {
     };
   }, []);
 
+  // Stop and completely kill any Shinchan dialogue or giggle audio
+  function stopDialogueAudio() {
+    if (dlgAudioRef.current) {
+      try {
+        dlgAudioRef.current.pause();
+        dlgAudioRef.current.currentTime = 0;
+        dlgAudioRef.current.onended = null;
+      } catch {}
+      dlgAudioRef.current = null;
+    }
+    const cachedLaugh = audioCacheRef.current[DLG_SCREEN3_LAUGH];
+    if (cachedLaugh) {
+      try {
+        cachedLaugh.pause();
+        cachedLaugh.currentTime = 0;
+        cachedLaugh.onended = null;
+      } catch {}
+    }
+  }
+
   // Play screen-specific BGM
   function playScreenBgm(screenNum: number) {
+    // When leaving Screen 3 or entering Screen 4/5, kill any laugh audio immediately!
+    if (screenNum !== 3) {
+      stopDialogueAudio();
+    }
+
     const trackUrl = SCREEN_BGMS[screenNum];
     if (!trackUrl) return;
 
@@ -142,6 +167,8 @@ export default function ShinchanIntro({ onDone }: Props) {
   // Play Screen 3 Shy Blushing Giggle
   function playScreen3Giggle() {
     if (!audioPlayingRef.current) return;
+    // Strictly guard: giggle is ONLY allowed on Screen 3!
+    if (screenRef.current !== 3) return;
 
     // Duck BGM volume slightly while giggle is playing
     if (bgmAudioRef.current) {
@@ -154,11 +181,15 @@ export default function ShinchanIntro({ onDone }: Props) {
       audioCacheRef.current[DLG_SCREEN3_LAUGH] = a;
     }
     dlgAudioRef.current = a;
-    a.currentTime = 0;
+    try {
+      a.pause();
+      a.currentTime = 0;
+    } catch {}
     a.volume = 1.0;
     a.play().catch(() => {});
     a.onended = () => {
-      if (bgmAudioRef.current) {
+      // Only restore BGM volume if still on Screen 3
+      if (screenRef.current === 3 && bgmAudioRef.current) {
         bgmAudioRef.current.volume = 0.85;
       }
     };
@@ -166,6 +197,9 @@ export default function ShinchanIntro({ onDone }: Props) {
 
   // Switch BGM whenever screen changes
   useEffect(() => {
+    if (screen !== 3) {
+      stopDialogueAudio();
+    }
     playScreenBgm(screen);
   }, [screen]);
 
@@ -173,6 +207,7 @@ export default function ShinchanIntro({ onDone }: Props) {
   function toggleMusic() {
     if (audioPlaying) {
       setAudioPlaying(false);
+      stopDialogueAudio();
       if (bgmAudioRef.current) {
         try {
           bgmAudioRef.current.pause();
@@ -251,6 +286,7 @@ export default function ShinchanIntro({ onDone }: Props) {
   }
 
   function handleNext() {
+    stopDialogueAudio();
     setScreen(4);
     setIdx4(0);
   }
@@ -258,6 +294,7 @@ export default function ShinchanIntro({ onDone }: Props) {
   function handleOpenGrandBox() {
     if (boxPopped) return;
     setBoxPopped(true);
+    stopDialogueAudio(); // Instantly kill any residual Shinchan laugh when opening gift!
 
     // Stop "Chilipi Baalude"
     if (bgmAudioRef.current) {
@@ -304,6 +341,7 @@ export default function ShinchanIntro({ onDone }: Props) {
   }
 
   function handleEnterCelebration() {
+    stopDialogueAudio();
     const activeAudioTime = bgmAudioRef.current?.currentTime || 0.0;
     if (bgmAudioRef.current) {
       try {
