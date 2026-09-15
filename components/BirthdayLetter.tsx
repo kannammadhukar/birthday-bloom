@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import confetti from "canvas-confetti";
 import { smoothAlign } from "@/lib/autoAlign";
 
@@ -63,8 +64,13 @@ export default function BirthdayLetter() {
   const [isFlipped, setIsFlipped] = useState(false); // false = Front (Address), true = Back (Seal & Flap)
   const [showBackElements, setShowBackElements] = useState(false);
   const [phase, setPhase] = useState<Phase>("idle");
+  const [mounted, setMounted] = useState(false);
+  const letterPaperRef = useRef<HTMLDivElement>(null);
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
-  const lastBackdropTapRef = useRef<number>(0);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   /* Clear all pending timers on unmount */
   useEffect(() => () => { timersRef.current.forEach(clearTimeout); }, []);
@@ -81,15 +87,35 @@ export default function BirthdayLetter() {
     }
   }, [phase]);
 
-  /* Close letter with Escape key */
+  /* Global single-press or tap in empty space outside letter paper to exit */
   useEffect(() => {
+    if (phase !== "open") return;
+
+    const handleGlobalPointer = (e: PointerEvent) => {
+      // If user clicked or tapped inside the letter paper, don't close
+      if (letterPaperRef.current && letterPaperRef.current.contains(e.target as Node)) {
+        return;
+      }
+      handleReseal();
+    };
+
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && phase === "open") {
+      if (e.key === "Escape") {
         handleReseal();
       }
     };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+
+    // Small timeout ensures the opening click event doesn't immediately close it
+    const timer = setTimeout(() => {
+      window.addEventListener("pointerdown", handleGlobalPointer, true);
+      window.addEventListener("keydown", handleKeyDown);
+    }, 60);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("pointerdown", handleGlobalPointer, true);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, [phase]);
 
   /* ── Flip envelope over ─────────────────────────────────── */
@@ -673,43 +699,42 @@ export default function BirthdayLetter() {
 
         </div>{/* end 3D flipping card */}
 
-        {/* ── FULL LETTER OVERLAY (Centered in viewport) ───────── */}
-        {letterOpen && (
+        {/* ── FULL LETTER OVERLAY (Centered in viewport via portal) ───────── */}
+        {letterOpen && mounted && typeof document !== "undefined" && createPortal(
           <div
+            id="birthday-letter-backdrop"
             style={{
               position: "fixed",
               inset: 0,
-              width: "100%",
+              width: "100vw",
               height: "100dvh",
               minHeight: "-webkit-fill-available",
-              zIndex: 9000,
+              zIndex: 2147483640,
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
-              background: "rgba(8, 3, 5, 0.88)",
+              background: "rgba(8, 3, 5, 0.90)",
               backdropFilter: "blur(14px)",
               padding: "max(14px, 3.5vh) max(14px, 4vw)",
               animation: "backdropFadeIn 0.3s ease forwards",
               overflowY: "auto",
               touchAction: "manipulation",
+              cursor: "pointer",
             }}
             onClick={(e) => {
-              if (e.target === e.currentTarget) {
+              if (letterPaperRef.current && !letterPaperRef.current.contains(e.target as Node)) {
                 handleReseal();
               }
             }}
             onDoubleClick={(e) => {
-              e.preventDefault();
-              handleReseal();
+              if (letterPaperRef.current && !letterPaperRef.current.contains(e.target as Node)) {
+                handleReseal();
+              }
             }}
             onTouchEnd={(e) => {
-              if (e.target === e.currentTarget) {
+              if (letterPaperRef.current && !letterPaperRef.current.contains(e.target as Node)) {
                 e.preventDefault();
-                const now = Date.now();
-                const diff = now - lastBackdropTapRef.current;
-                lastBackdropTapRef.current = now;
-                // Closes on single tap or double-tap outside!
                 handleReseal();
               }
             }}
@@ -786,12 +811,14 @@ export default function BirthdayLetter() {
               }}
             >
               <span>✉️</span>
-              <span>Double-tap outside or tap here to exit</span>
+              <span>Tap empty space outside or tap here to exit</span>
               <span style={{ color: "#ffd700", fontSize: "0.9rem" }}>✕</span>
             </div>
 
             <div
+              ref={letterPaperRef}
               onClick={e => e.stopPropagation()}
+              onTouchStart={e => e.stopPropagation()}
               onTouchEnd={e => e.stopPropagation()}
               style={{
                 background: "#fffdf9",
@@ -926,7 +953,8 @@ export default function BirthdayLetter() {
                 </p>
               </div>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
       </div>{/* end perspective container */}
 

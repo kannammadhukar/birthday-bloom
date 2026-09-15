@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 
 export interface EmojiOption {
   emoji: string;
@@ -41,7 +42,12 @@ export default function BirthdayGiftAnimation({
   const [isExiting, setIsExiting] = useState(false);
   const [cursorEmoji, setCursorEmoji] = useState("🦋");
   const [showCursorDropdown, setShowCursorDropdown] = useState(false);
-  const lastBackdropTapRef = useRef<number>(0);
+  const [mounted, setMounted] = useState(false);
+  const giftLetterPaperRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Sync cursor selection with global theme and localStorage
   useEffect(() => {
@@ -161,15 +167,34 @@ export default function BirthdayGiftAnimation({
     setIsLetterOpen(false);
   };
 
-  // Close letter on Escape key press
+  // Close letter on Escape key press or single press/tap in empty space
   useEffect(() => {
+    if (!isLetterOpen) return;
+
+    const handleGlobalPointer = (e: PointerEvent) => {
+      // If user clicked or tapped inside the letter paper, don't close
+      if (giftLetterPaperRef.current && giftLetterPaperRef.current.contains(e.target as Node)) {
+        return;
+      }
+      handleCloseLetter();
+    };
+
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isLetterOpen) {
+      if (e.key === "Escape") {
         handleCloseLetter();
       }
     };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+
+    const timer = setTimeout(() => {
+      window.addEventListener("pointerdown", handleGlobalPointer, true);
+      window.addEventListener("keydown", handleKeyDown);
+    }, 60);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("pointerdown", handleGlobalPointer, true);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, [isLetterOpen]);
 
   // Rotating circle text: "HAPPY-BIRTHDAY-"
@@ -361,26 +386,38 @@ export default function BirthdayGiftAnimation({
         <img src="/images/gift_animation/smiley_icon.png" alt="Smiley" width="100" />
       </div>
 
-      {/* ── Interactive Birthday Letter Popup Modal ── */}
-      {isLetterOpen && (
+      {/* ── Interactive Birthday Letter Popup Modal (via Portal) ── */}
+      {isLetterOpen && mounted && typeof document !== "undefined" && createPortal(
         <div
           className="box__letter"
+          style={{
+            position: "fixed",
+            inset: 0,
+            width: "100vw",
+            height: "100dvh",
+            zIndex: 2147483640,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: "rgba(0, 0, 0, 0.75)",
+            backdropFilter: "blur(12px)",
+            padding: "1rem",
+            boxSizing: "border-box",
+            cursor: "pointer",
+          }}
           onClick={(e) => {
-            if (e.target === e.currentTarget) {
+            if (giftLetterPaperRef.current && !giftLetterPaperRef.current.contains(e.target as Node)) {
               handleCloseLetter();
             }
           }}
           onDoubleClick={(e) => {
-            e.preventDefault();
-            handleCloseLetter();
+            if (giftLetterPaperRef.current && !giftLetterPaperRef.current.contains(e.target as Node)) {
+              handleCloseLetter();
+            }
           }}
           onTouchEnd={(e) => {
-            if (e.target === e.currentTarget) {
+            if (giftLetterPaperRef.current && !giftLetterPaperRef.current.contains(e.target as Node)) {
               e.preventDefault();
-              const now = Date.now();
-              const diff = now - lastBackdropTapRef.current;
-              lastBackdropTapRef.current = now;
-              // Closes on single tap or double-tap outside!
               handleCloseLetter();
             }
           }}
@@ -402,7 +439,7 @@ export default function BirthdayGiftAnimation({
               position: "fixed",
               top: "max(env(safe-area-inset-top), 16px)",
               right: "max(env(safe-area-inset-right), 16px)",
-              zIndex: 100000,
+              zIndex: 2147483645,
               width: "48px",
               height: "48px",
               minWidth: "48px",
@@ -420,7 +457,7 @@ export default function BirthdayGiftAnimation({
               boxShadow: "0 4px 25px rgba(0,0,0,0.85), 0 0 16px rgba(225, 29, 72, 0.6)",
               touchAction: "manipulation",
             }}
-            title="Close Letter (or double-tap outside)"
+            title="Close Letter (or tap empty space outside)"
           >
             ✕
           </button>
@@ -432,14 +469,14 @@ export default function BirthdayGiftAnimation({
               top: "max(env(safe-area-inset-top), 16px)",
               left: "50%",
               transform: "translateX(-50%)",
-              zIndex: 99999,
-              background: "rgba(30, 10, 20, 0.92)",
+              zIndex: 2147483644,
+              background: "rgba(30, 10, 20, 0.94)",
               backdropFilter: "blur(12px)",
               border: "1.5px solid rgba(255, 255, 255, 0.8)",
               borderRadius: "24px",
-              padding: "6px 18px",
+              padding: "8px 20px",
               color: "#ffffff",
-              fontSize: "0.80rem",
+              fontSize: "0.82rem",
               fontWeight: 700,
               display: "flex",
               alignItems: "center",
@@ -457,15 +494,17 @@ export default function BirthdayGiftAnimation({
             }}
           >
             <span>✉️</span>
-            <span>Double-tap outside or tap here to exit</span>
+            <span>Tap empty space outside or tap here to exit</span>
             <span style={{ color: "#ffd1d9", fontSize: "0.9rem" }}>✕</span>
           </div>
 
           <div
+            ref={giftLetterPaperRef}
             className="letter__border"
             onClick={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
             onTouchEnd={(e) => e.stopPropagation()}
-            style={{ width: "clamp(300px, 86vw, 720px)" }}
+            style={{ width: "clamp(300px, 86vw, 720px)", cursor: "default" }}
           >
             <div className="letter">
               <div className="title__letter">
@@ -553,7 +592,8 @@ export default function BirthdayGiftAnimation({
               ✕
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ── Bottom Action Bar: Proceed to Gala & Cut Cake ── */}
