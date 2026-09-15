@@ -326,6 +326,27 @@ body {
 }
 .icon-btn:hover { background: rgba(107, 20, 34, 0.5); border-color: var(--primary-gold); transform: scale(1.08); }
 
+.camera-header-btn {
+  width: auto !important;
+  min-width: auto !important;
+  height: 42px !important;
+  min-height: 42px !important;
+  border-radius: 22px !important;
+  padding: 6px 14px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.camera-header-label {
+  white-space: nowrap !important;
+  display: inline-block !important;
+  overflow: visible !important;
+}
+
 @media (max-width: 640px) {
   .header-nav {
     padding: max(var(--safe-top), 8px) max(var(--safe-right), 10px) 8px max(var(--safe-left), 10px);
@@ -339,13 +360,20 @@ body {
   }
   .camera-header-label {
     display: inline-block !important;
-    font-size: 0.74rem !important;
+    font-size: 0.72rem !important;
     letter-spacing: 0.2px;
+    white-space: nowrap !important;
   }
   .camera-header-btn {
-    padding: 6px 10px !important;
+    padding: 4px 10px !important;
     gap: 4px !important;
-    min-height: 44px !important;
+    height: 38px !important;
+    min-height: 38px !important;
+    border-radius: 20px !important;
+    width: auto !important;
+    min-width: auto !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
   }
   .nav-actions {
     gap: 6px;

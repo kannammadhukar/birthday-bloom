@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import CinemaIntro from "@/components/CinemaIntro";
@@ -92,6 +92,7 @@ export default function Home() {
   const [showCameraSettings, setShowCameraSettings] = useState(false);
   const [isArActive, setIsArActive] = useState(false);
   const [shareUrl, setShareUrl] = useState("http://localhost:3000");
+  const [copiedLink, setCopiedLink] = useState(false);
   const [wishes, setWishes] = useState<WishItem[]>(DEFAULT_WISHES);
   const [wishName, setWishName] = useState("");
   const [wishText, setWishText] = useState("");
@@ -179,6 +180,31 @@ export default function Home() {
       window.removeEventListener("open-camera-settings", handleOpenSettings);
     };
   }, []);
+
+  const handleShare = useCallback(async () => {
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({
+          title: "Divija's 23rd Birthday Celebration 👑",
+          text: "Celebrate Divija's 23rd Birthday! Interactive 3D cake, memories, and wishes ✨",
+          url: typeof window !== "undefined" ? window.location.href : shareUrl,
+        });
+        return;
+      } catch {
+        // Fallback to QR modal if user cancels or error
+      }
+    }
+    setShowQR(true);
+  }, [shareUrl]);
+
+  const copyShareUrl = useCallback(() => {
+    const url = typeof window !== "undefined" ? window.location.href : shareUrl;
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(url);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2400);
+    }
+  }, [shareUrl]);
 
   // Stop tribute video and immediately halt its music
   function stopTributeVideo(resumeWebsiteMusic: boolean | React.SyntheticEvent = false) {
@@ -598,49 +624,68 @@ export default function Home() {
           <div className="nav-actions">
             <button
               type="button"
-              className="icon-btn camera-header-btn"
+              className="camera-header-btn"
               onClick={() => setShowCameraSettings(true)}
               title="Camera & AR Settings"
+              aria-label="Camera & AR Settings"
               style={{
                 display: "inline-flex",
                 alignItems: "center",
-                gap: "8px",
-                padding: "8px 16px",
-                borderRadius: "24px",
+                gap: "6px",
+                padding: "6px 14px",
+                borderRadius: "22px",
                 background: isArActive 
                   ? "linear-gradient(135deg, rgba(34, 197, 94, 0.35) 0%, rgba(20, 83, 45, 0.5) 100%)" 
                   : "linear-gradient(135deg, rgba(212, 175, 55, 0.22) 0%, rgba(128, 24, 42, 0.35) 100%)",
                 border: `1.5px solid ${isArActive ? "#4ade80" : "rgba(255, 215, 0, 0.65)"}`,
                 color: isArActive ? "#86efac" : "#fff3cf",
-                fontSize: "0.85rem",
+                fontSize: "0.82rem",
                 fontWeight: 800,
                 cursor: "pointer",
                 boxShadow: isArActive 
                   ? "0 0 16px rgba(74, 222, 128, 0.5)" 
                   : "0 4px 15px rgba(0, 0, 0, 0.6), 0 0 14px rgba(212, 175, 55, 0.3)",
                 transition: "all 0.25s ease",
+                whiteSpace: "nowrap",
+                flexShrink: 0,
+                width: "auto",
+                minWidth: "auto",
               }}
             >
-              <span style={{ fontSize: "1.1rem" }}>📸</span>
-              <span className="camera-header-label" style={{ fontSize: "0.82rem", letterSpacing: "0.4px" }}>
+              <span style={{ fontSize: "1.05rem", flexShrink: 0 }}>📸</span>
+              <span
+                className="camera-header-label"
+                style={{
+                  fontSize: "0.78rem",
+                  letterSpacing: "0.3px",
+                  whiteSpace: "nowrap",
+                  fontWeight: 700,
+                }}
+              >
                 {isArActive ? "AR Active 🪄" : "Camera & AR ✨"}
               </span>
               <span
                 style={{
-                  width: "8px",
-                  height: "8px",
+                  width: "7px",
+                  height: "7px",
                   borderRadius: "50%",
                   background: isArActive ? "#22c55e" : "#ffd700",
-                  boxShadow: `0 0 10px ${isArActive ? "#22c55e" : "#ffd700"}`,
+                  boxShadow: `0 0 8px ${isArActive ? "#22c55e" : "#ffd700"}`,
                   display: "inline-block",
+                  flexShrink: 0,
                 }}
               />
             </button>
-            <button className="icon-btn" onClick={toggleAudio} title="Toggle Music">
+            <button className="icon-btn" onClick={toggleAudio} title="Toggle Music" aria-label="Toggle Music">
               {isPlaying ? "🔊" : "🔇"}
             </button>
-            <button className="icon-btn" onClick={() => setShowQR(true)} title="Share QR Code">
-              📱
+            <button
+              className="icon-btn"
+              onClick={handleShare}
+              title="Share Celebration (Link & QR Code)"
+              aria-label="Share Celebration (Link & QR Code)"
+            >
+              📤
             </button>
           </div>
         </header>
@@ -1309,16 +1354,43 @@ export default function Home() {
           <div onClick={e => e.stopPropagation()} style={{
             background:"rgba(18,8,14,0.97)", padding:32, borderRadius:24,
             border:"1px solid #d4af37", boxShadow: "0 0 50px rgba(107,20,34,0.5)", textAlign:"center",
+            maxWidth: 360, width: "90%",
           }}>
             <span className="close-modal" style={{ position:"static", display:"block", textAlign:"right", marginBottom:8 }}
               onClick={() => setShowQR(false)}>×</span>
-            <h3 style={{ color:"#f3e5ab", fontSize:"1.4rem", marginBottom:12, fontFamily: "'Playfair Display', serif" }}>Scan to Share! 📲</h3>
+            <h3 style={{ color:"#f3e5ab", fontSize:"1.35rem", marginBottom:12, fontFamily: "'Playfair Display', serif" }}>Share Celebration! 📲</h3>
             <div style={{ background:"#fff", padding:12, borderRadius:12, display:"inline-block" }}>
-              <div style={{ width:160, height:160, display:"flex", alignItems:"center", justifyContent:"center", color:"#374151", fontSize:"0.85rem", wordBreak: "break-all", padding: "8px" }}>
+              <div style={{ width:160, height:160, display:"flex", alignItems:"center", justifyContent:"center", color:"#374151", fontSize:"0.82rem", wordBreak: "break-all", padding: "8px", textAlign: "center" }}>
                 QR: {shareUrl}
               </div>
             </div>
-            <p style={{ color:"#d5c7b8", marginTop:12, fontSize:"0.85rem" }}>Share the gala premiere with Divija!</p>
+            <div style={{ marginTop: 14 }}>
+              <button
+                type="button"
+                onClick={copyShareUrl}
+                style={{
+                  padding: "8px 20px",
+                  borderRadius: 20,
+                  background: copiedLink
+                    ? "linear-gradient(135deg, #22c55e, #15803d)"
+                    : "linear-gradient(135deg, #d4af37, #b45309)",
+                  color: copiedLink ? "#ffffff" : "#12020a",
+                  fontWeight: 800,
+                  fontSize: "0.82rem",
+                  border: "none",
+                  cursor: "pointer",
+                  boxShadow: "0 4px 14px rgba(0,0,0,0.5)",
+                  transition: "all 0.2s ease",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                }}
+              >
+                <span>{copiedLink ? "✓" : "📋"}</span>
+                <span>{copiedLink ? "Link Copied!" : "Copy Celebration Link"}</span>
+              </button>
+            </div>
+            <p style={{ color:"#d5c7b8", marginTop:12, fontSize:"0.82rem" }}>Share the royal gala premiere with Divija and loved ones!</p>
           </div>
         </div>
       )}
