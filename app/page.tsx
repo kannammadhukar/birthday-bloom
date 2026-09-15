@@ -81,8 +81,8 @@ export const PLAYLIST: AudioTrack[] = [
 ══════════════════════════════════════════════════════════════ */
 export default function Home() {
   const [introShown, setIntroShown] = useState(false);
-  const [passcodeUnlocked, setPasscodeUnlocked] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [passcodeUnlocked, setPasscodeUnlocked] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(true);
   const [adminPreviewAsGuest, setAdminPreviewAsGuest] = useState(false);
   const [activeFilter, setActiveFilter] = useState("all");
   const [lightboxSrc, setLightboxSrc] = useState("");
@@ -135,10 +135,10 @@ export default function Home() {
     if (typeof window !== "undefined") {
       setShareUrl(window.location.href);
 
-      // Reset any saved unlock tokens so the Royal Premiere Passcode screen always shows
+      // Site is live to everyone - set unlocked auth in storage
       try {
-        localStorage.removeItem("divija_passcode_auth");
-        localStorage.removeItem("divija_auth_role");
+        localStorage.setItem("divija_passcode_auth", "unlocked");
+        localStorage.setItem("divija_auth_role", "admin");
       } catch {}
 
       // Preload lightweight Shinchan animated GIFs immediately while on the passcode gate
@@ -154,9 +154,8 @@ export default function Home() {
     }
   }, []);
 
-  // Preload gift animation assets only after passcode unlock (not on initial gate load)
+  // Preload gift animation assets immediately for instant opening
   useEffect(() => {
-    if (!passcodeUnlocked) return;
     const keyPhotos = [
       "/images/photo_25.jpg",
       "/images/gift_animation/balloon1.png",
@@ -1356,22 +1355,21 @@ export default function Home() {
             paddingTop: "16px",
             borderTop: "1px solid rgba(212, 175, 55, 0.15)",
           }}>
-            <button
-              type="button"
-              onClick={handleLockWebsite}
+            <div
               style={{
-                background: "transparent",
-                border: "none",
-                color: "rgba(212, 175, 55, 0.55)",
-                fontSize: "0.78rem",
+                color: "rgba(212, 175, 55, 0.65)",
+                fontSize: "0.8rem",
                 fontFamily: "'Outfit', sans-serif",
-                cursor: "pointer",
-                textDecoration: "underline",
-                letterSpacing: "0.03em",
+                letterSpacing: "0.04em",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
               }}
             >
-              🔒 Passcode Protected ({isAdmin ? "VIP Mode" : "Guest Mode"}) · Lock Site
-            </button>
+              <span>👑</span>
+              <span>Celebrating Divija&apos;s 23rd Birthday · Live to Everyone</span>
+              <span>✨</span>
+            </div>
           </div>
         </section>
       </div>
