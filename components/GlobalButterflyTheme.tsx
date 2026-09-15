@@ -23,7 +23,6 @@ export default function GlobalButterflyTheme() {
   const [isClicking, setIsClicking] = useState(false);
   const [hasPointerMoved, setHasPointerMoved] = useState(false);
   const [showCursorPicker, setShowCursorPicker] = useState(false);
-  const [showCursorHint, setShowCursorHint] = useState(true);
   const [isOverInteractive, setIsOverInteractive] = useState(false);
 
   const lastPointerRef = useRef({ x: -100, y: -100 });
@@ -43,7 +42,6 @@ export default function GlobalButterflyTheme() {
     };
     const onOpenCursorPicker = () => {
       setShowCursorPicker(true);
-      setShowCursorHint(false);
     };
 
     window.addEventListener("divija-cursor-changed", onCustomCursorChanged);
@@ -442,77 +440,15 @@ export default function GlobalButterflyTheme() {
           pointerEvents: "auto",
         }}
       >
-        {/* Floating Helpful Callout Message For New Visitors */}
-        {showCursorHint && !showCursorPicker && (
-          <div
-            style={{
-              position: "absolute",
-              bottom: "54px",
-              left: "0",
-              background: "linear-gradient(135deg, rgba(38, 9, 21, 0.96) 0%, rgba(18, 4, 12, 0.98) 100%)",
-              border: "1.5px solid rgba(255, 215, 0, 0.85)",
-              borderRadius: "18px",
-              padding: "8px 14px",
-              boxShadow: "0 10px 32px rgba(0, 0, 0, 0.9), 0 0 20px rgba(212, 175, 55, 0.45)",
-              color: "#fff3cf",
-              fontSize: "0.78rem",
-              fontFamily: "'Outfit', sans-serif",
-              whiteSpace: "nowrap",
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
-              zIndex: 100000,
-            }}
-          >
-            <span style={{ fontSize: "1rem" }}>🪄</span>
-            <span>
-              <strong>Magic Cursor:</strong> Tap here to pick your favorite emoji follower!
-            </span>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowCursorHint(false);
-              }}
-              onTouchEnd={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setShowCursorHint(false);
-              }}
-              style={{
-                background: "rgba(255, 255, 255, 0.15)",
-                border: "none",
-                borderRadius: "50%",
-                color: "#ffd700",
-                width: "28px",
-                height: "28px",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "0.85rem",
-                fontWeight: 700,
-                lineHeight: 1,
-                touchAction: "manipulation",
-              }}
-              title="Dismiss tip"
-            >
-              ✕
-            </button>
-          </div>
-        )}
-
         <button
           type="button"
           onClick={() => {
             setShowCursorPicker((prev) => !prev);
-            setShowCursorHint(false);
           }}
           onTouchEnd={(e) => {
             e.preventDefault();
             e.stopPropagation();
             setShowCursorPicker((prev) => !prev);
-            setShowCursorHint(false);
           }}
           title="Change Custom Butterfly/Emoji Cursor"
           style={{

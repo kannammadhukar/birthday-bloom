@@ -1667,25 +1667,9 @@ export default function BirthdayGiftAnimation({
             min-height: auto;
           }
 
-          /* Mobile Top Controls & Continue Button */
+          /* Mobile Top Controls: Hide desktop cursor picker on mobile touchscreens */
           .cursor-selector-wrapper {
-            top: 12px !important;
-            left: 12px !important;
-            z-index: 20000 !important;
-            pointer-events: auto !important;
-          }
-          .cursor-selector-btn {
-            padding: 6px 14px !important;
-            min-height: 42px !important;
-            font-size: 0.82rem !important;
-            touch-action: manipulation !important;
-            pointer-events: auto !important;
-          }
-          .cursor-dropdown-menu {
-            width: 280px !important;
-            max-width: calc(100vw - 24px) !important;
-            z-index: 20001 !important;
-            touch-action: manipulation !important;
+            display: none !important;
           }
           .audio-control-btn {
             top: 12px !important;
