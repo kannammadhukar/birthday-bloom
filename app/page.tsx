@@ -626,6 +626,10 @@ export default function Home() {
               type="button"
               className="camera-header-btn"
               onClick={() => setShowCameraSettings(true)}
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                setShowCameraSettings(true);
+              }}
               title="Camera & AR Settings"
               aria-label="Camera & AR Settings"
               style={{
@@ -650,6 +654,7 @@ export default function Home() {
                 flexShrink: 0,
                 width: "auto",
                 minWidth: "auto",
+                touchAction: "manipulation",
               }}
             >
               <span style={{ fontSize: "1.05rem", flexShrink: 0 }}>📸</span>
@@ -676,14 +681,29 @@ export default function Home() {
                 }}
               />
             </button>
-            <button className="icon-btn" onClick={toggleAudio} title="Toggle Music" aria-label="Toggle Music">
+            <button
+              className="icon-btn"
+              onClick={toggleAudio}
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                toggleAudio();
+              }}
+              title="Toggle Music"
+              aria-label="Toggle Music"
+              style={{ touchAction: "manipulation" }}
+            >
               {isPlaying ? "🔊" : "🔇"}
             </button>
             <button
               className="icon-btn"
               onClick={handleShare}
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                handleShare();
+              }}
               title="Share Celebration (Link & QR Code)"
               aria-label="Share Celebration (Link & QR Code)"
+              style={{ touchAction: "manipulation" }}
             >
               📤
             </button>

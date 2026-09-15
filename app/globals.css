@@ -82,12 +82,13 @@ body {
   }
 }
 
-/* On touch-only mobile devices, disable artificial cursor host and particle trail */
+/* On touch-only mobile devices, keep cursor picker accessible and disable heavy trail canvas */
 @media (hover: none) and (pointer: coarse) {
-  .global-custom-cursor-host,
-  .global-cursor-picker-host,
   .global-trail-canvas {
     display: none !important;
+  }
+  .global-custom-cursor-host {
+    pointer-events: none !important;
   }
 }
 
@@ -1062,6 +1063,9 @@ input[type="range"]::-moz-range-track {
 .global-cursor-picker-host {
   bottom: max(var(--safe-bottom), 16px) !important;
   left: max(var(--safe-left), 16px) !important;
+  z-index: 10000003 !important;
+  pointer-events: auto !important;
+  touch-action: manipulation !important;
 }
 
 .floating-music-bar,

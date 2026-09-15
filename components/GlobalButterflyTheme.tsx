@@ -29,16 +29,35 @@ export default function GlobalButterflyTheme() {
   const lastPointerRef = useRef({ x: -100, y: -100 });
   const trailCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  // Load saved cursor preference
+  // Load saved cursor preference and listen for external changes
   useEffect(() => {
     try {
       const saved = localStorage.getItem("divija_custom_cursor");
       if (saved) setCursorEmoji(saved);
     } catch {}
+
+    const onCustomCursorChanged = (e: any) => {
+      if (e.detail?.emoji) {
+        setCursorEmoji(e.detail.emoji);
+      }
+    };
+    const onOpenCursorPicker = () => {
+      setShowCursorPicker(true);
+      setShowCursorHint(false);
+    };
+
+    window.addEventListener("divija-cursor-changed", onCustomCursorChanged);
+    window.addEventListener("open-cursor-picker", onOpenCursorPicker);
+    return () => {
+      window.removeEventListener("divija-cursor-changed", onCustomCursorChanged);
+      window.removeEventListener("open-cursor-picker", onOpenCursorPicker);
+    };
   }, []);
 
   // ── Global Pointer Tracker ──
   useEffect(() => {
+    let touchFadeTimer: NodeJS.Timeout | null = null;
+
     const onMouseMove = (e: MouseEvent) => {
       setHasPointerMoved(true);
       const dx = e.clientX - lastPointerRef.current.x;
@@ -58,27 +77,46 @@ export default function GlobalButterflyTheme() {
     const onTouchMove = (e: TouchEvent) => {
       if (e.touches.length > 0) {
         setHasPointerMoved(true);
+        if (touchFadeTimer) clearTimeout(touchFadeTimer);
         const t = e.touches[0];
         const dx = t.clientX - lastPointerRef.current.x;
         const tilt = Math.max(-22, Math.min(22, dx * 1.5));
         setCursorAngle(tilt);
-        setCursorPos({ x: t.clientX, y: t.clientY });
+        // Float slightly above touch point on mobile so finger doesn't obscure the butterfly/emoji
+        setCursorPos({ x: t.clientX, y: t.clientY - 26 });
         lastPointerRef.current = { x: t.clientX, y: t.clientY };
       }
+    };
+
+    const onTouchStart = (e: TouchEvent) => {
+      setIsClicking(true);
+      onTouchMove(e);
+    };
+
+    const onTouchEnd = () => {
+      setIsClicking(false);
+      // Keep follower visible during touch interaction, fade after 2.5s of no touches
+      if (touchFadeTimer) clearTimeout(touchFadeTimer);
+      touchFadeTimer = setTimeout(() => {
+        setHasPointerMoved(false);
+      }, 2500);
     };
 
     window.addEventListener("mousemove", onMouseMove, { passive: true });
     window.addEventListener("mousedown", onMouseDown, { passive: true });
     window.addEventListener("mouseup", onMouseUp, { passive: true });
     window.addEventListener("touchmove", onTouchMove, { passive: true });
-    window.addEventListener("touchstart", onTouchMove, { passive: true });
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchend", onTouchEnd, { passive: true });
 
     return () => {
+      if (touchFadeTimer) clearTimeout(touchFadeTimer);
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mousedown", onMouseDown);
       window.removeEventListener("mouseup", onMouseUp);
       window.removeEventListener("touchmove", onTouchMove);
-      window.removeEventListener("touchstart", onTouchMove);
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchend", onTouchEnd);
     };
   }, []);
 
@@ -436,20 +474,26 @@ export default function GlobalButterflyTheme() {
                 e.stopPropagation();
                 setShowCursorHint(false);
               }}
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setShowCursorHint(false);
+              }}
               style={{
                 background: "rgba(255, 255, 255, 0.15)",
                 border: "none",
                 borderRadius: "50%",
                 color: "#ffd700",
-                width: "20px",
-                height: "20px",
+                width: "28px",
+                height: "28px",
                 cursor: "pointer",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontSize: "0.75rem",
+                fontSize: "0.85rem",
                 fontWeight: 700,
                 lineHeight: 1,
+                touchAction: "manipulation",
               }}
               title="Dismiss tip"
             >
@@ -464,6 +508,12 @@ export default function GlobalButterflyTheme() {
             setShowCursorPicker((prev) => !prev);
             setShowCursorHint(false);
           }}
+          onTouchEnd={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setShowCursorPicker((prev) => !prev);
+            setShowCursorHint(false);
+          }}
           title="Change Custom Butterfly/Emoji Cursor"
           style={{
             display: "inline-flex",
@@ -475,12 +525,15 @@ export default function GlobalButterflyTheme() {
             border: "1.5px solid rgba(255, 215, 0, 0.75)",
             borderRadius: "30px",
             padding: "8px 18px",
+            minHeight: "44px",
             color: "#fff3cf",
             fontSize: "0.85rem",
             fontWeight: 800,
             boxShadow: "0 8px 25px rgba(0, 0, 0, 0.8), 0 0 16px rgba(255, 215, 0, 0.35)",
             transition: "all 0.25s ease",
             cursor: "pointer",
+            touchAction: "manipulation",
+            pointerEvents: "auto",
           }}
         >
           <span style={{ fontSize: "1.15rem" }}>🪄</span>
@@ -517,6 +570,7 @@ export default function GlobalButterflyTheme() {
               boxShadow: "0 20px 50px rgba(0, 0, 0, 0.95), 0 0 35px rgba(255, 215, 0, 0.4)",
               width: "290px",
               zIndex: 100001,
+              touchAction: "manipulation",
             }}
           >
             {/* Header with Title and Large Glowing Close Button */}
@@ -545,12 +599,17 @@ export default function GlobalButterflyTheme() {
               <button
                 type="button"
                 onClick={() => setShowCursorPicker(false)}
+                onTouchEnd={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowCursorPicker(false);
+                }}
                 style={{
                   background: "rgba(255, 255, 255, 0.16)",
                   border: "2px solid rgba(255, 215, 0, 0.8)",
                   borderRadius: "50%",
-                  width: "38px",
-                  height: "38px",
+                  width: "42px",
+                  height: "42px",
                   color: "#ffd700",
                   fontSize: "1.2rem",
                   fontWeight: 900,
@@ -561,6 +620,7 @@ export default function GlobalButterflyTheme() {
                   lineHeight: 1,
                   boxShadow: "0 0 14px rgba(255, 215, 0, 0.45)",
                   transition: "transform 0.15s ease",
+                  touchAction: "manipulation",
                 }}
                 title="Close picker"
               >
@@ -588,16 +648,25 @@ export default function GlobalButterflyTheme() {
             >
               {TOP_GIRL_EMOJIS.map((item) => {
                 const isSelected = cursorEmoji === item.emoji;
+                const selectEmoji = () => {
+                  setCursorEmoji(item.emoji);
+                  try {
+                    localStorage.setItem("divija_custom_cursor", item.emoji);
+                  } catch {}
+                  if (typeof window !== "undefined") {
+                    window.dispatchEvent(new CustomEvent("divija-cursor-changed", { detail: { emoji: item.emoji } }));
+                  }
+                  setShowCursorPicker(false);
+                };
                 return (
                   <button
                     key={item.emoji}
                     type="button"
-                    onClick={() => {
-                      setCursorEmoji(item.emoji);
-                      try {
-                        localStorage.setItem("divija_custom_cursor", item.emoji);
-                      } catch {}
-                      setShowCursorPicker(false);
+                    onClick={selectEmoji}
+                    onTouchEnd={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      selectEmoji();
                     }}
                     title={`${item.name} · ${item.desc}`}
                     style={{
@@ -613,12 +682,14 @@ export default function GlobalButterflyTheme() {
                         : "1px solid rgba(255, 255, 255, 0.14)",
                       borderRadius: "14px",
                       padding: "8px 2px",
+                      minHeight: "44px",
                       fontSize: "1.45rem",
                       cursor: "pointer",
                       boxShadow: isSelected
                         ? "0 0 16px rgba(255, 215, 0, 0.5)"
                         : "none",
                       transition: "all 0.18s ease",
+                      touchAction: "manipulation",
                     }}
                   >
                     <span>{item.emoji}</span>

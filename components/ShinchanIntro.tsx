@@ -21,6 +21,29 @@ export default function ShinchanIntro({ onDone }: Props) {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
+  const [cursorEmoji, setCursorEmoji] = useState("🦋");
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("divija_custom_cursor");
+      if (saved) setCursorEmoji(saved);
+    } catch {}
+
+    const onCustomCursorChanged = (e: any) => {
+      if (e.detail?.emoji) {
+        setCursorEmoji(e.detail.emoji);
+      }
+    };
+    window.addEventListener("divija-cursor-changed", onCustomCursorChanged);
+    return () => window.removeEventListener("divija-cursor-changed", onCustomCursorChanged);
+  }, []);
+
+  const handleOpenCursorPicker = () => {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("open-cursor-picker"));
+    }
+  };
+
   // Per-screen dialogue indices
   const [idx1, setIdx1] = useState(0);
   const [idx2, setIdx2] = useState(0);
@@ -449,11 +472,12 @@ export default function ShinchanIntro({ onDone }: Props) {
             left: "10%",
             right: "10%",
             height: "2px",
-            background: "linear-gradient(90deg, transparent, rgba(230, 202, 133, 0.4), rgba(230, 202, 133, 0.85), rgba(230, 202, 133, 0.4), transparent)"
+            background: "linear-gradient(90deg, transparent, rgba(230, 202, 133, 0.4), rgba(230, 202, 133, 0.85), rgba(230, 202, 133, 0.4), transparent)",
+            pointerEvents: "none",
           }}
         />
 
-        {/* Top Control Bar: Royal Badge + Audio & Skip Controls */}
+        {/* Top Control Bar: Royal Badge + Cursor + Audio & Skip Controls */}
         <div
           className="pavilion-topbar"
           style={{
@@ -463,7 +487,8 @@ export default function ShinchanIntro({ onDone }: Props) {
             width: "100%",
             marginBottom: "clamp(6px, 1.4vh, 14px)",
             position: "relative",
-            zIndex: 20,
+            zIndex: 100,
+            pointerEvents: "auto",
             flexShrink: 0,
             flexWrap: "wrap",
             gap: "6px",
@@ -476,7 +501,7 @@ export default function ShinchanIntro({ onDone }: Props) {
               display: "inline-flex",
               alignItems: "center",
               gap: "5px",
-              padding: "4px 12px",
+              padding: "5px 12px",
               borderRadius: "18px",
               background: "linear-gradient(135deg, rgba(68, 13, 33, 0.7) 0%, rgba(28, 5, 14, 0.8) 100%)",
               border: "1px solid rgba(212, 175, 55, 0.5)",
@@ -496,16 +521,60 @@ export default function ShinchanIntro({ onDone }: Props) {
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
+            {/* Cursor Follower Selector Button */}
+            <button
+              type="button"
+              onClick={handleOpenCursorPicker}
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleOpenCursorPicker();
+              }}
+              className="pavilion-cursor-btn"
+              title="Change Butterfly & Magic Follower Cursor"
+              style={{
+                background: "linear-gradient(135deg, rgba(42, 10, 26, 0.9) 0%, rgba(20, 4, 12, 0.95) 100%)",
+                border: "1px solid rgba(230, 202, 133, 0.5)",
+                borderRadius: "24px",
+                padding: "6px 12px",
+                minHeight: "38px",
+                fontSize: "clamp(0.72rem, 1.1vw, 0.82rem)",
+                fontWeight: 700,
+                color: "#ffd700",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "5px",
+                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.4)",
+                transition: "all 0.2s ease",
+                whiteSpace: "nowrap",
+                flexShrink: 0,
+                touchAction: "manipulation",
+                pointerEvents: "auto",
+                WebkitTapHighlightColor: "transparent",
+              }}
+            >
+              <span>🪄</span>
+              <span style={{ fontSize: "1.05rem" }}>{cursorEmoji}</span>
+              <span>{isMobile ? "" : "Cursor"}</span>
+            </button>
+
             {/* Music Control Pill Button */}
             <button
               type="button"
               onClick={toggleMusic}
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleMusic();
+              }}
               className="pavilion-music-btn"
               style={{
                 background: "#1e050c",
                 border: "1px solid rgba(230, 202, 133, 0.4)",
                 borderRadius: "24px",
-                padding: "5px 11px",
+                padding: "6px 12px",
+                minHeight: "38px",
                 fontSize: "clamp(0.70rem, 1.1vw, 0.80rem)",
                 fontWeight: 600,
                 color: "#e6ca85",
@@ -517,6 +586,9 @@ export default function ShinchanIntro({ onDone }: Props) {
                 transition: "all 0.2s ease",
                 whiteSpace: "nowrap",
                 flexShrink: 0,
+                touchAction: "manipulation",
+                pointerEvents: "auto",
+                WebkitTapHighlightColor: "transparent",
               }}
             >
               <span>{audioPlaying ? "🎵" : "🔇"}</span>
@@ -527,12 +599,18 @@ export default function ShinchanIntro({ onDone }: Props) {
             <button
               type="button"
               onClick={handleEnterCelebration}
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleEnterCelebration();
+              }}
               className="pavilion-skip-btn"
               style={{
                 background: "linear-gradient(135deg, rgba(212, 175, 55, 0.25) 0%, rgba(120, 18, 40, 0.35) 100%)",
                 border: "1.5px solid rgba(255, 215, 0, 0.55)",
                 borderRadius: "24px",
-                padding: "5px 10px",
+                padding: "6px 11px",
+                minHeight: "38px",
                 fontSize: "clamp(0.68rem, 1.0vw, 0.76rem)",
                 fontWeight: 800,
                 color: "#ffd700",
@@ -544,6 +622,9 @@ export default function ShinchanIntro({ onDone }: Props) {
                 boxShadow: "0 2px 8px rgba(0, 0, 0, 0.4)",
                 transition: "all 0.2s ease",
                 flexShrink: 0,
+                touchAction: "manipulation",
+                pointerEvents: "auto",
+                WebkitTapHighlightColor: "transparent",
               }}
               title="Skip directly to the celebration gala"
             >
@@ -1462,16 +1543,26 @@ export default function ShinchanIntro({ onDone }: Props) {
             align-items: center !important;
           }
           .pavilion-topbar {
-            margin-bottom: 6px !important;
+            margin-bottom: 8px !important;
             width: 100% !important;
+            position: relative !important;
+            z-index: 100 !important;
+            pointer-events: auto !important;
           }
           .pavilion-badge {
-            padding: 4px 12px !important;
+            padding: 5px 10px !important;
             font-size: 0.70rem !important;
           }
-          .pavilion-music-btn {
-            padding: 4px 12px !important;
-            font-size: 0.72rem !important;
+          .pavilion-music-btn,
+          .pavilion-skip-btn,
+          .pavilion-cursor-btn {
+            min-height: 38px !important;
+            padding: 6px 10px !important;
+            font-size: 0.74rem !important;
+            touch-action: manipulation !important;
+            pointer-events: auto !important;
+            cursor: pointer !important;
+            -webkit-tap-highlight-color: transparent !important;
           }
           .screen-header {
             margin-top: 2px !important;

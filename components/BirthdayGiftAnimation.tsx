@@ -39,6 +39,35 @@ export default function BirthdayGiftAnimation({
   const [showLetterGifs, setShowLetterGifs] = useState(false);
   const [showLetterHearts, setShowLetterHearts] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
+  const [cursorEmoji, setCursorEmoji] = useState("🦋");
+  const [showCursorDropdown, setShowCursorDropdown] = useState(false);
+
+  // Sync cursor selection with global theme and localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("divija_custom_cursor");
+      if (saved) setCursorEmoji(saved);
+    } catch {}
+
+    const onCustomCursorChanged = (e: any) => {
+      if (e.detail?.emoji) {
+        setCursorEmoji(e.detail.emoji);
+      }
+    };
+    window.addEventListener("divija-cursor-changed", onCustomCursorChanged);
+    return () => window.removeEventListener("divija-cursor-changed", onCustomCursorChanged);
+  }, []);
+
+  const handleSelectEmoji = (emoji: string) => {
+    setCursorEmoji(emoji);
+    try {
+      localStorage.setItem("divija_custom_cursor", emoji);
+    } catch {}
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("divija-cursor-changed", { detail: { emoji } }));
+    }
+    setShowCursorDropdown(false);
+  };
 
 
 
@@ -137,13 +166,67 @@ export default function BirthdayGiftAnimation({
   return (
     <div className={`gift-animation-wrapper ${isExiting ? "exiting" : ""}`}>
 
+      {/* ── Top Left: Cursor Selector Pill ── */}
+      <div className="cursor-selector-wrapper">
+        <button
+          type="button"
+          className="cursor-selector-btn"
+          onClick={() => setShowCursorDropdown((prev) => !prev)}
+          onTouchEnd={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setShowCursorDropdown((prev) => !prev);
+          }}
+          aria-label="Change Butterfly & Magic Follower Cursor"
+          title="Change Custom Cursor"
+        >
+          <span className="cursor-current-emoji">{cursorEmoji}</span>
+          <span className="cursor-label">Cursor</span>
+          <span className="cursor-caret">{showCursorDropdown ? "▲" : "▼"}</span>
+        </button>
+
+        {showCursorDropdown && (
+          <div className="cursor-dropdown-menu" onClick={(e) => e.stopPropagation()}>
+            <div className="cursor-dropdown-header">Choose Magic Follower ✨</div>
+            <div className="cursor-emoji-grid">
+              {TOP_GIRL_EMOJIS.map((item) => {
+                const isSelected = cursorEmoji === item.emoji;
+                return (
+                  <button
+                    key={item.emoji}
+                    type="button"
+                    className={`cursor-option-btn ${isSelected ? "active" : ""}`}
+                    onClick={() => handleSelectEmoji(item.emoji)}
+                    onTouchEnd={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleSelectEmoji(item.emoji);
+                    }}
+                    title={`${item.name} - ${item.desc}`}
+                  >
+                    <span className="option-emoji">{item.emoji}</span>
+                    <span className="option-name">{item.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Music Toggle (Top Right) */}
       {onToggleMusic && (
         <button
           type="button"
           className="audio-control-btn"
           onClick={onToggleMusic}
+          onTouchEnd={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onToggleMusic();
+          }}
           aria-label={audioPlaying ? "Mute Music" : "Play Music"}
+          title={audioPlaying ? "Mute Music" : "Play Music"}
         >
           {audioPlaying ? "🔊" : "🔇"}
         </button>
@@ -426,14 +509,17 @@ export default function BirthdayGiftAnimation({
           position: fixed;
           top: 16px;
           left: 18px;
-          z-index: 16000;
+          z-index: 20000;
+          pointer-events: auto !important;
+          touch-action: manipulation !important;
         }
         .cursor-selector-btn {
           background: rgba(255, 255, 255, 0.95);
           backdrop-filter: blur(8px);
           border: 2.5px solid #333;
           border-radius: 50px;
-          padding: 6px 16px;
+          padding: 8px 18px;
+          min-height: 44px;
           display: flex;
           align-items: center;
           gap: 8px;
@@ -443,6 +529,10 @@ export default function BirthdayGiftAnimation({
           color: #333;
           box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
           transition: transform 0.2s ease, background 0.2s ease;
+          cursor: pointer;
+          pointer-events: auto !important;
+          touch-action: manipulation !important;
+          -webkit-tap-highlight-color: transparent;
         }
         .cursor-selector-btn:hover {
           transform: scale(1.05);
@@ -547,19 +637,24 @@ export default function BirthdayGiftAnimation({
           position: fixed;
           top: 16px;
           right: 18px;
-          z-index: 16000;
-          width: 44px;
-          height: 44px;
+          z-index: 20000;
+          width: 48px;
+          height: 48px;
+          min-width: 44px;
+          min-height: 44px;
           border-radius: 50%;
           border: 2.5px solid #333;
           background: #ffffff;
-          font-size: 1.2rem;
+          font-size: 1.25rem;
           display: flex;
           align-items: center;
           justify-content: center;
           cursor: pointer;
-          box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+          pointer-events: auto !important;
+          touch-action: manipulation !important;
+          box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
           transition: transform 0.2s ease, background-color 0.2s ease;
+          -webkit-tap-highlight-color: transparent;
         }
         .audio-control-btn:hover {
           transform: scale(1.1);
@@ -573,8 +668,12 @@ export default function BirthdayGiftAnimation({
           justify-content: space-between;
           transform: translateY(-200px);
           animation: translateYFlag 1.2s 0.2s forwards ease-out;
-          pointer-events: none;
+          pointer-events: none !important;
           max-height: clamp(38px, 6vh, 65px);
+          z-index: 1000;
+        }
+        .flag__birthday * {
+          pointer-events: none !important;
         }
         @keyframes translateYFlag {
           to {
@@ -1371,19 +1470,35 @@ export default function BirthdayGiftAnimation({
 
           /* Mobile Top Controls & Continue Button */
           .cursor-selector-wrapper {
-            top: 10px !important;
-            left: 10px !important;
+            top: 12px !important;
+            left: 12px !important;
+            z-index: 20000 !important;
+            pointer-events: auto !important;
           }
           .cursor-selector-btn {
-            padding: 4px 10px !important;
-            font-size: 0.74rem !important;
+            padding: 6px 14px !important;
+            min-height: 42px !important;
+            font-size: 0.82rem !important;
+            touch-action: manipulation !important;
+            pointer-events: auto !important;
+          }
+          .cursor-dropdown-menu {
+            width: 280px !important;
+            max-width: calc(100vw - 24px) !important;
+            z-index: 20001 !important;
+            touch-action: manipulation !important;
           }
           .audio-control-btn {
-            top: 10px !important;
-            right: 10px !important;
-            width: 36px !important;
-            height: 36px !important;
-            font-size: 1rem !important;
+            top: 12px !important;
+            right: 12px !important;
+            width: 44px !important;
+            height: 44px !important;
+            min-width: 44px !important;
+            min-height: 44px !important;
+            font-size: 1.15rem !important;
+            z-index: 20000 !important;
+            pointer-events: auto !important;
+            touch-action: manipulation !important;
           }
           .gala-continue-bar {
             margin: 0.2rem auto 8px !important;
