@@ -162,6 +162,11 @@ export default function Home() {
       const img = new window.Image();
       img.src = src;
     });
+
+    // Prime main track metadata so intro → gala audio handoff is instant (no download gap)
+    if (medleyAudioRef.current) {
+      medleyAudioRef.current.preload = "metadata";
+    }
   }, [passcodeUnlocked]);
 
   // Sync AR camera state across header settings and cake experience
@@ -419,9 +424,16 @@ export default function Home() {
       localStorage.removeItem("divija_passcode_auth");
       localStorage.removeItem("divija_auth_role");
     } catch {}
+    // Stop music before locking
+    if (medleyAudioRef.current) {
+      try { medleyAudioRef.current.pause(); } catch {}
+    }
     setIsAdmin(false);
     setAdminPreviewAsGuest(false);
     setPasscodeUnlocked(false);
+    setIntroShown(false); // Bug fix: gala was still visible behind passcode gate after lock
+    setIsMedleyPlaying(false);
+    setIsPlaying(false);
   }
 
   // Divija's Admin Controls: Hide / Unhide Wish
@@ -590,7 +602,10 @@ export default function Home() {
               medleyAudioRef.current.currentTime = startAt;
               setMedleyTime(startAt);
               stopTributeVideo();
-              medleyAudioRef.current.play().then(() => setIsMedleyPlaying(true)).catch(() => {});
+              medleyAudioRef.current.play().then(() => {
+                setIsMedleyPlaying(true);
+                setIsPlaying(true); // Sync header music icon ← Bug fix: was always showing 🔇
+              }).catch(() => {});
             }
           }}
         />
@@ -602,14 +617,17 @@ export default function Home() {
         src={currentTrack.src}
         preload="none"
         loop={false}
-        onPlay={() => setIsMedleyPlaying(true)}
-        onPause={() => setIsMedleyPlaying(false)}
+        onPlay={() => { setIsMedleyPlaying(true); setIsPlaying(true); }}
+        onPause={() => { setIsMedleyPlaying(false); setIsPlaying(false); }}
         onEnded={() => {
           // If Samajavaragamana completes, loop and keep playing continuously from start!
           if (medleyAudioRef.current) {
             medleyAudioRef.current.currentTime = 0.0;
             setMedleyTime(0.0);
-            medleyAudioRef.current.play().then(() => setIsMedleyPlaying(true)).catch(() => {});
+            medleyAudioRef.current.play().then(() => {
+              setIsMedleyPlaying(true);
+              setIsPlaying(true);
+            }).catch(() => {});
           }
         }}
         onTimeUpdate={() => {
