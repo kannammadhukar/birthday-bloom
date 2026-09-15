@@ -81,8 +81,8 @@ export const PLAYLIST: AudioTrack[] = [
 ══════════════════════════════════════════════════════════════ */
 export default function Home() {
   const [introShown, setIntroShown] = useState(false);
-  const [passcodeUnlocked, setPasscodeUnlocked] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [passcodeUnlocked, setPasscodeUnlocked] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(true);
   const [adminPreviewAsGuest, setAdminPreviewAsGuest] = useState(false);
   const [activeFilter, setActiveFilter] = useState("all");
   const [lightboxSrc, setLightboxSrc] = useState("");
