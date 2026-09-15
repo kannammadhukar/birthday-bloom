@@ -1185,17 +1185,36 @@ input[type="range"]::-moz-range-track {
     justify-content: space-between !important;
     align-items: center !important;
   }
-  .pavilion-topbar {
+  .pavilion-topbar,
+  .pavilion-top-bar {
     margin-bottom: 6px !important;
     width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
   }
   .pavilion-badge {
-    padding: 4px 12px !important;
+    padding: 3px 10px !important;
     font-size: 0.70rem !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    letter-spacing: 0.05em !important;
   }
   .pavilion-music-btn {
-    padding: 4px 12px !important;
-    font-size: 0.72rem !important;
+    padding: 4px 10px !important;
+    font-size: 0.70rem !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+  }
+  .pavilion-skip-btn {
+    padding: 4px 10px !important;
+    font-size: 0.70rem !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
   }
   .screen-header {
     margin-top: 2px !important;

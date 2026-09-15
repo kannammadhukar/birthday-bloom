@@ -12,6 +12,14 @@ export default function ShinchanIntro({ onDone }: Props) {
   const [boxPopped, setBoxPopped] = useState(false);
   const [exiting, setExiting] = useState(false);
   const [audioPlaying, setAudioPlaying] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth <= 600);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   // Per-screen dialogue indices
   const [idx1, setIdx1] = useState(0);
@@ -407,7 +415,7 @@ export default function ShinchanIntro({ onDone }: Props) {
           }}
         />
 
-        {/* Dedicated Top Control Bar (Prevents Music Button from Overlapping Header on Mobile!) */}
+        {/* Top Control Bar: Royal Badge + Audio & Skip Controls */}
         <div
           className="pavilion-topbar"
           style={{
@@ -418,7 +426,9 @@ export default function ShinchanIntro({ onDone }: Props) {
             marginBottom: "clamp(6px, 1.4vh, 14px)",
             position: "relative",
             zIndex: 20,
-            flexShrink: 0
+            flexShrink: 0,
+            flexWrap: "wrap",
+            gap: "6px",
           }}
         >
           {/* Royal Pill Badge */}
@@ -427,17 +437,19 @@ export default function ShinchanIntro({ onDone }: Props) {
             style={{
               display: "inline-flex",
               alignItems: "center",
-              gap: "6px",
-              padding: "4px 14px",
+              gap: "5px",
+              padding: "4px 12px",
               borderRadius: "18px",
               background: "linear-gradient(135deg, rgba(68, 13, 33, 0.7) 0%, rgba(28, 5, 14, 0.8) 100%)",
               border: "1px solid rgba(212, 175, 55, 0.5)",
               color: "#fce8b2",
               fontSize: "clamp(0.68rem, 1.1vw, 0.78rem)",
               fontWeight: 700,
-              letterSpacing: "0.1em",
+              letterSpacing: "0.06em",
               textTransform: "uppercase",
               boxShadow: "0 2px 8px rgba(0,0,0,0.5)",
+              whiteSpace: "nowrap",
+              flexShrink: 0,
             }}
           >
             <span>👑</span>
@@ -445,7 +457,7 @@ export default function ShinchanIntro({ onDone }: Props) {
             <span>✨</span>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
             {/* Music Control Pill Button */}
             <button
               type="button"
@@ -455,21 +467,22 @@ export default function ShinchanIntro({ onDone }: Props) {
                 background: "#1e050c",
                 border: "1px solid rgba(230, 202, 133, 0.4)",
                 borderRadius: "24px",
-                padding: "5px 13px",
+                padding: "5px 11px",
                 fontSize: "clamp(0.70rem, 1.1vw, 0.80rem)",
                 fontWeight: 600,
                 color: "#e6ca85",
                 cursor: "pointer",
                 display: "flex",
                 alignItems: "center",
-                gap: "6px",
+                gap: "5px",
                 boxShadow: "0 2px 8px rgba(0, 0, 0, 0.4)",
                 transition: "all 0.2s ease",
-                whiteSpace: "nowrap"
+                whiteSpace: "nowrap",
+                flexShrink: 0,
               }}
             >
               <span>{audioPlaying ? "🎵" : "🔇"}</span>
-              <span>{audioPlaying ? `Music: ${musicMoodTitle}` : "Music Muted"}</span>
+              <span>{audioPlaying ? (isMobile ? "Music" : `Music: ${musicMoodTitle}`) : "Muted"}</span>
             </button>
 
             {/* Skip to Gala Button */}
@@ -481,7 +494,7 @@ export default function ShinchanIntro({ onDone }: Props) {
                 background: "linear-gradient(135deg, rgba(212, 175, 55, 0.25) 0%, rgba(120, 18, 40, 0.35) 100%)",
                 border: "1.5px solid rgba(255, 215, 0, 0.55)",
                 borderRadius: "24px",
-                padding: "5px 12px",
+                padding: "5px 10px",
                 fontSize: "clamp(0.68rem, 1.0vw, 0.76rem)",
                 fontWeight: 800,
                 color: "#ffd700",
@@ -492,10 +505,11 @@ export default function ShinchanIntro({ onDone }: Props) {
                 whiteSpace: "nowrap",
                 boxShadow: "0 2px 8px rgba(0, 0, 0, 0.4)",
                 transition: "all 0.2s ease",
+                flexShrink: 0,
               }}
               title="Skip directly to the celebration gala"
             >
-              <span>Skip to Gala ➔</span>
+              <span>{isMobile ? "Skip ➔" : "Skip to Gala ➔"}</span>
             </button>
           </div>
         </div>
