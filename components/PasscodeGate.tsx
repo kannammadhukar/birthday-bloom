@@ -85,7 +85,67 @@ export default function PasscodeGate({ onUnlock }: PasscodeGateProps) {
     };
   }, []);
 
-  // Handle master input typing (mobile or physical keyboard)
+  // Auto-verify as soon as 4 digits are entered
+  useEffect(() => {
+    if (code.length === 4 && !isVerifying) {
+      const timer = setTimeout(() => {
+        verifyCode(code);
+      }, 120);
+      return () => clearTimeout(timer);
+    }
+  }, [code, isVerifying, verifyCode]);
+
+  // Touch & click-safe numpad handler (no double-tap, no synthetic pointer issues)
+  const handleNumpadPress = useCallback(
+    (val: string) => {
+      if (isVerifying) return;
+      setErrorMsg("");
+
+      if (val === "⌫") {
+        playTone(320);
+        setCode((prev) => prev.slice(0, -1));
+        return;
+      }
+      if (val === "C") {
+        playTone(280);
+        setCode("");
+        return;
+      }
+
+      setCode((prev) => {
+        if (prev.length >= 4) return prev;
+        playTone(460 + (prev.length + 1) * 60);
+        return prev + val;
+      });
+    },
+    [isVerifying, playTone]
+  );
+
+  // Global physical keyboard listener (typing 0-9, Backspace, C, Enter works anywhere)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (isVerifying) return;
+
+      if (e.key >= "0" && e.key <= "9") {
+        e.preventDefault();
+        handleNumpadPress(e.key);
+      } else if (e.key === "Backspace") {
+        e.preventDefault();
+        handleNumpadPress("⌫");
+      } else if (e.key === "Escape" || e.key.toLowerCase() === "c") {
+        e.preventDefault();
+        handleNumpadPress("C");
+      } else if (e.key === "Enter" && code.length === 4) {
+        e.preventDefault();
+        verifyCode(code);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [code, isVerifying, handleNumpadPress, verifyCode]);
+
+  // Handle master input typing for soft keyboard if focused
   const handleMasterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (isVerifying) return;
     const cleanDigits = e.target.value.replace(/[^0-9]/g, "").slice(0, 4);
@@ -94,44 +154,12 @@ export default function PasscodeGate({ onUnlock }: PasscodeGateProps) {
     if (cleanDigits.length > 0) {
       playTone(440 + cleanDigits.length * 60);
     }
-    if (cleanDigits.length === 4) {
-      verifyCode(cleanDigits);
-    }
   };
 
-  const handleMasterKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && code.length >= 4) {
-      verifyCode(code);
-    }
-  };
-
-  // Touch & click-safe numpad handler (zero latency, no focus stealing)
-  const handleNumpadPress = (val: string) => {
-    if (isVerifying) return;
-    setErrorMsg("");
-
-    if (val === "⌫") {
-      playTone(320);
-      setCode((prev) => prev.slice(0, -1));
-    } else if (val === "C") {
-      playTone(280);
-      setCode("");
-    } else {
-      playTone(460 + (code.length + 1) * 60);
-      setCode((prev) => {
-        if (prev.length >= 4) return prev;
-        const next = prev + val;
-        if (next.length === 4) {
-          setTimeout(() => verifyCode(next), 50);
-        }
-        return next;
-      });
-    }
-  };
-
-  // 1-Tap Quick Unlock for convenience
+  // 1-Tap Quick Unlock for instant entry
   const handleQuickUnlock = (pass: string) => {
     if (isVerifying) return;
+    setErrorMsg("");
     setCode(pass);
     verifyCode(pass);
   };
@@ -253,7 +281,6 @@ export default function PasscodeGate({ onUnlock }: PasscodeGateProps) {
             maxLength={4}
             value={code}
             onChange={handleMasterChange}
-            onKeyDown={handleMasterKeyDown}
             aria-label="4-digit invitation passcode"
             style={{
               position: "absolute",
@@ -375,31 +402,26 @@ export default function PasscodeGate({ onUnlock }: PasscodeGateProps) {
               <button
                 key={btn}
                 type="button"
-                onPointerDown={(e) => {
-                  e.preventDefault();
-                  handleNumpadPress(btn);
-                }}
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleNumpadPress(btn);
-                }}
+                onClick={() => handleNumpadPress(btn)}
                 className="numpad-key"
                 style={{
-                  height: "46px",
-                  borderRadius: "12px",
-                  background: isSpecial ? "rgba(180, 40, 60, 0.2)" : "rgba(255, 255, 255, 0.07)",
-                  border: isSpecial ? "1px solid rgba(239, 68, 68, 0.35)" : "1.2px solid rgba(212, 175, 55, 0.25)",
+                  height: "48px",
+                  borderRadius: "14px",
+                  background: isSpecial ? "rgba(180, 40, 60, 0.22)" : "rgba(255, 255, 255, 0.08)",
+                  border: isSpecial ? "1.2px solid rgba(239, 68, 68, 0.4)" : "1.2px solid rgba(212, 175, 55, 0.35)",
                   color: isSpecial ? "#fca5a5" : "#fce8b2",
-                  fontSize: btn === "⌫" ? "1.15rem" : "1.22rem",
+                  fontSize: btn === "⌫" ? "1.25rem" : "1.28rem",
                   fontWeight: 600,
                   cursor: "pointer",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  transition: "transform 0.1s, background 0.15s",
+                  transition: "transform 0.1s ease, background 0.15s ease",
                   touchAction: "manipulation",
                   userSelect: "none",
                   WebkitUserSelect: "none",
+                  WebkitTapHighlightColor: "transparent",
+                  outline: "none",
                 }}
               >
                 {btn}
@@ -411,35 +433,37 @@ export default function PasscodeGate({ onUnlock }: PasscodeGateProps) {
         {/* 1-Tap Quick Unlock Badges */}
         <div
           style={{
-            borderTop: "1px solid rgba(212, 175, 55, 0.16)",
-            paddingTop: "12px",
+            borderTop: "1px solid rgba(212, 175, 55, 0.2)",
+            paddingTop: "14px",
             display: "flex",
             flexDirection: "column",
-            gap: "8px",
+            gap: "10px",
           }}
         >
-          <span style={{ fontSize: "0.72rem", color: "rgba(212, 175, 55, 0.65)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-            Quick 1-Tap Entry
+          <span style={{ fontSize: "0.74rem", color: "rgba(212, 175, 55, 0.8)", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600 }}>
+            Instant 1-Tap Access
           </span>
-          <div style={{ display: "flex", gap: "8px", justifyContent: "center" }}>
+          <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
             <button
               type="button"
               onClick={() => handleQuickUnlock("2006")}
               style={{
                 flex: 1,
-                padding: "8px 10px",
+                padding: "10px 12px",
                 borderRadius: "12px",
-                background: "rgba(212, 175, 55, 0.15)",
-                border: "1.2px solid rgba(212, 175, 55, 0.4)",
+                background: "linear-gradient(135deg, rgba(212, 175, 55, 0.25) 0%, rgba(122, 21, 38, 0.35) 100%)",
+                border: "1.5px solid rgba(212, 175, 55, 0.6)",
                 color: "#ffd166",
-                fontSize: "0.78rem",
+                fontSize: "0.82rem",
                 fontWeight: 700,
                 cursor: "pointer",
                 display: "inline-flex",
                 alignItems: "center",
                 justifyContent: "center",
-                gap: "5px",
+                gap: "6px",
                 transition: "all 0.15s ease",
+                touchAction: "manipulation",
+                WebkitTapHighlightColor: "transparent",
               }}
             >
               👑 Divija (2006)
@@ -449,23 +473,28 @@ export default function PasscodeGate({ onUnlock }: PasscodeGateProps) {
               onClick={() => handleQuickUnlock("2003")}
               style={{
                 flex: 1,
-                padding: "8px 10px",
+                padding: "10px 12px",
                 borderRadius: "12px",
-                background: "rgba(255, 255, 255, 0.06)",
-                border: "1.2px solid rgba(212, 175, 55, 0.25)",
+                background: "rgba(255, 255, 255, 0.08)",
+                border: "1.2px solid rgba(212, 175, 55, 0.35)",
                 color: "#fce8b2",
-                fontSize: "0.78rem",
+                fontSize: "0.82rem",
                 fontWeight: 600,
                 cursor: "pointer",
                 display: "inline-flex",
                 alignItems: "center",
                 justifyContent: "center",
-                gap: "5px",
+                gap: "6px",
                 transition: "all 0.15s ease",
+                touchAction: "manipulation",
+                WebkitTapHighlightColor: "transparent",
               }}
             >
               ✨ Guest (2003)
             </button>
+          </div>
+          <div style={{ fontSize: "0.72rem", color: "rgba(243, 237, 225, 0.55)", marginTop: "2px" }}>
+            (Tap above to enter instantly, or type code 2006 / 2003 / 1109)
           </div>
         </div>
       </div>
