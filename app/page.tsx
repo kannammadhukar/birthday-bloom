@@ -1498,7 +1498,7 @@ export default function Home() {
                 letterSpacing: "0.03em",
               }}
             >
-              🔒 Passcode Protected ({isAdmin ? "Admin 2006" : "Guest 2003"}) · Change Passcode / Lock
+              🔒 Passcode Protected ({isAdmin ? "VIP Mode" : "Guest Mode"}) · Lock Site
             </button>
           </div>
         </section>

@@ -1,5 +1,5 @@
-"use client";
-import React, { useState } from "react";
+﻿"use client";
+import React, { useState, useEffect } from "react";
 
 interface PasscodeGateProps {
   onUnlock: (auth: { isAdmin: boolean; code: string }) => void;
@@ -11,6 +11,7 @@ export default function PasscodeGate({ onUnlock }: PasscodeGateProps) {
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [shake, setShake] = useState(false);
+  const [showDigits, setShowDigits] = useState(true);
 
   function unlock(pass: string) {
     try {
@@ -35,17 +36,20 @@ export default function PasscodeGate({ onUnlock }: PasscodeGateProps) {
     setCode(next);
     if (next.length === 4) {
       if (VALID_CODES.includes(next)) {
-        setTimeout(() => unlock(next), 120);
+        setTimeout(() => unlock(next), 150);
       } else {
         setShake(true);
-        setError("Wrong code! Tap the gold button below to enter directly.");
-        setTimeout(() => { setShake(false); setCode(""); }, 800);
+        setError("Incorrect passcode. Please try again.");
+        setTimeout(() => {
+          setShake(false);
+          setCode("");
+        }, 750);
       }
     }
   }
 
   // Physical keyboard support for desktop & laptop users
-  React.useEffect(() => {
+  useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key >= "0" && e.key <= "9") {
         pressKey(e.key);
@@ -54,10 +58,17 @@ export default function PasscodeGate({ onUnlock }: PasscodeGateProps) {
       } else if (e.key === "Escape") {
         pressKey("CLR");
       } else if (e.key === "Enter") {
-        if (code.length === 4 && VALID_CODES.includes(code)) {
-          unlock(code);
-        } else {
-          unlock("2006");
+        if (code.length === 4) {
+          if (VALID_CODES.includes(code)) {
+            unlock(code);
+          } else {
+            setShake(true);
+            setError("Incorrect passcode. Please try again.");
+            setTimeout(() => {
+              setShake(false);
+              setCode("");
+            }, 750);
+          }
         }
       }
     }
@@ -68,120 +79,195 @@ export default function PasscodeGate({ onUnlock }: PasscodeGateProps) {
   const digits = [0, 1, 2, 3].map((i) => code[i] ?? "");
 
   return (
-    <div style={{
-      position: "fixed", inset: 0, zIndex: 9999999,
-      background: "radial-gradient(ellipse 80% 70% at 50% 40%, #1a0410 0%, #0c0208 100%)",
-      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-      padding: "16px", touchAction: "manipulation",
-    }}>
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 9999999,
+        background: "radial-gradient(ellipse 80% 70% at 50% 40%, #1a0410 0%, #0c0208 100%)",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "16px",
+        touchAction: "manipulation",
+      }}
+    >
       <div
         className={shake ? "passcode-shake" : ""}
         style={{
-          width: "100%", maxWidth: "360px",
+          width: "100%",
+          maxWidth: "360px",
           background: "linear-gradient(145deg, #2a0a18 0%, #120408 100%)",
-          border: "2px solid rgba(212,175,55,0.6)", borderRadius: "24px",
-          padding: "28px 20px", textAlign: "center", position: "relative",
+          border: "2px solid rgba(212,175,55,0.6)",
+          borderRadius: "24px",
+          padding: "32px 24px 28px",
+          textAlign: "center",
+          position: "relative",
+          boxShadow: "0 25px 80px rgba(0, 0, 0, 0.95), 0 0 45px rgba(212, 175, 55, 0.2)",
         }}
       >
-        {/* Skip button top-right */}
-        <button
-          type="button"
-          onClick={() => unlock("2006")}
+        {/* Crown Icon */}
+        <div
           style={{
-            position: "absolute", top: 10, right: 10,
-            background: "rgba(212,175,55,0.2)", border: "1px solid rgba(212,175,55,0.6)",
-            borderRadius: "12px", padding: "4px 12px", color: "#ffd700",
-            fontSize: "0.76rem", fontWeight: 700, cursor: "pointer",
-          }}
-        >Skip ➔</button>
-
-        {/* Crown */}
-        <div style={{ fontSize: "2.2rem", marginBottom: "8px" }}>👑</div>
-
-        {/* Title */}
-        <h2 style={{ color: "#f6d896", fontSize: "1.5rem", fontFamily: "Georgia, serif", margin: "0 0 4px" }}>
-          The Royal Premiere 🎬
-        </h2>
-        <p style={{ color: "rgba(243,237,225,0.75)", fontSize: "0.85rem", margin: "0 0 20px" }}>
-          Divija's 23rd Birthday Gala<br />
-          <span style={{ color: "rgba(212,175,55,0.85)", fontSize: "0.78rem" }}>Enter your 4-digit passcode</span>
-        </p>
-
-        {/* Big direct entry button */}
-        <button
-          type="button"
-          onClick={() => unlock("2006")}
-          style={{
-            width: "100%", padding: "13px", borderRadius: "14px",
-            background: "linear-gradient(135deg, #d4af37, #ffd700, #b38728)",
-            color: "#18040d", fontSize: "1rem", fontWeight: 800,
-            border: "none", cursor: "pointer", marginBottom: "20px",
-            boxShadow: "0 6px 20px rgba(212,175,55,0.5)",
-            touchAction: "manipulation",
+            width: 56,
+            height: 56,
+            borderRadius: "50%",
+            background: "linear-gradient(135deg, rgba(212, 175, 55, 0.3), rgba(122, 21, 38, 0.4))",
+            border: "1.5px solid #f6d896",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: "1.8rem",
+            margin: "0 auto 14px",
+            boxShadow: "0 0 24px rgba(212, 175, 55, 0.35)",
           }}
         >
-          👑 Enter Gala Directly ✨
-        </button>
-
-        {/* 4 digit boxes */}
-        <div style={{ display: "flex", justifyContent: "center", gap: "12px", marginBottom: "16px" }}>
-          {digits.map((d, i) => (
-            <div key={i} style={{
-              width: 54, height: 60, borderRadius: "12px",
-              background: d ? "rgba(140,20,45,0.5)" : "rgba(255,255,255,0.06)",
-              border: code.length === i ? "2px solid #ffd166" : d ? "1.5px solid #f6d896" : "1.5px solid rgba(212,175,55,0.3)",
-              color: "#fff", fontSize: "1.6rem", fontWeight: 700,
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}>
-              {d || (code.length === i ? "|" : "")}
-            </div>
-          ))}
+          👑
         </div>
 
-        {/* Error message */}
-        <div style={{ minHeight: "24px", marginBottom: "12px" }}>
-          {error && <p style={{ color: "#fca5a5", fontSize: "0.82rem", margin: 0 }}>{error}</p>}
+        {/* Title */}
+        <h2
+          style={{
+            color: "#f6d896",
+            fontSize: "1.5rem",
+            fontFamily: "'Playfair Display', Georgia, serif",
+            fontWeight: 700,
+            margin: "0 0 6px",
+            letterSpacing: "0.02em",
+          }}
+        >
+          The Royal Premiere 🎬
+        </h2>
+        <p
+          style={{
+            color: "rgba(243,237,225,0.8)",
+            fontSize: "0.85rem",
+            margin: "0 0 20px",
+            lineHeight: 1.4,
+          }}
+        >
+          Divija’s 23rd Birthday Gala<br />
+          <span style={{ color: "rgba(212,175,55,0.9)", fontSize: "0.78rem" }}>
+            🔒 Private Invitation · Enter 4-Digit Passcode
+          </span>
+        </p>
+
+        {/* 4 Digit Display Boxes */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            gap: "12px",
+            marginBottom: "10px",
+          }}
+        >
+          {digits.map((d, i) => {
+            const isCurrent = code.length === i;
+            return (
+              <div
+                key={i}
+                style={{
+                  width: 54,
+                  height: 60,
+                  borderRadius: "14px",
+                  background: d ? "rgba(140,20,45,0.5)" : "rgba(255,255,255,0.05)",
+                  border: isCurrent
+                    ? "2px solid #ffd166"
+                    : d
+                    ? "1.8px solid #f6d896"
+                    : "1.5px solid rgba(212,175,55,0.3)",
+                  color: "#fff",
+                  fontSize: showDigits ? "1.6rem" : "1.8rem",
+                  fontWeight: 700,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  boxShadow: isCurrent
+                    ? "0 0 16px rgba(255, 209, 102, 0.45)"
+                    : d
+                    ? "0 0 12px rgba(212, 175, 55, 0.3)"
+                    : "none",
+                  transition: "all 0.18s ease",
+                  userSelect: "none",
+                  WebkitUserSelect: "none",
+                }}
+              >
+                {d ? (showDigits ? d : "●") : isCurrent ? "|" : ""}
+              </div>
+            );
+          })}
         </div>
 
-        {/* Numpad */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px", maxWidth: "260px", margin: "0 auto 16px" }}>
-          {["1","2","3","4","5","6","7","8","9","CLR","0","DEL"].map((btn) => (
-            <button
-              key={btn}
-              type="button"
-              onClick={() => pressKey(btn)}
-              style={{
-                height: "52px", borderRadius: "12px", fontSize: "1.3rem", fontWeight: 700,
-                background: (btn === "DEL" || btn === "CLR") ? "rgba(180,40,60,0.25)" : "rgba(255,255,255,0.09)",
-                border: (btn === "DEL" || btn === "CLR") ? "1px solid rgba(239,68,68,0.4)" : "1px solid rgba(212,175,55,0.35)",
-                color: (btn === "DEL" || btn === "CLR") ? "#fca5a5" : "#fce8b2",
-                cursor: "pointer", touchAction: "manipulation",
-                WebkitTapHighlightColor: "transparent",
-              }}
-            >
-              {btn === "DEL" ? "⌫" : btn}
-            </button>
-          ))}
-        </div>
-
-        {/* Quick-tap guest entry */}
-        <div style={{ display: "flex", gap: "10px" }}>
-          <button type="button" onClick={() => unlock("2003")}
+        {/* Show/Hide digits toggle */}
+        <div style={{ marginBottom: "12px" }}>
+          <button
+            type="button"
+            onClick={() => setShowDigits((s) => !s)}
             style={{
-              flex: 1, padding: "10px", borderRadius: "12px",
-              background: "rgba(255,255,255,0.07)", border: "1px solid rgba(212,175,55,0.35)",
-              color: "#fce8b2", fontSize: "0.82rem", fontWeight: 600,
-              cursor: "pointer", touchAction: "manipulation",
+              background: "transparent",
+              border: "none",
+              color: "rgba(212, 175, 55, 0.75)",
+              fontSize: "0.74rem",
+              cursor: "pointer",
+              padding: "2px 8px",
             }}
-          >✨ Guest (2003)</button>
-          <button type="button" onClick={() => unlock("1109")}
-            style={{
-              flex: 1, padding: "10px", borderRadius: "12px",
-              background: "rgba(255,255,255,0.07)", border: "1px solid rgba(212,175,55,0.35)",
-              color: "#fce8b2", fontSize: "0.82rem", fontWeight: 600,
-              cursor: "pointer", touchAction: "manipulation",
-            }}
-          >🌸 Guest (1109)</button>
+          >
+            {showDigits ? "👁️ Hide numbers" : "👁️ Show numbers"}
+          </button>
+        </div>
+
+        {/* Error message slot */}
+        <div style={{ minHeight: "22px", marginBottom: "14px" }}>
+          {error && (
+            <p style={{ color: "#fca5a5", fontSize: "0.82rem", margin: 0, fontWeight: 600 }}>
+              {error}
+            </p>
+          )}
+        </div>
+
+        {/* 3x4 On-Screen Numpad */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            gap: "10px",
+            maxWidth: "270px",
+            margin: "0 auto",
+          }}
+        >
+          {["1", "2", "3", "4", "5", "6", "7", "8", "9", "CLR", "0", "DEL"].map((btn) => {
+            const isSpecial = btn === "DEL" || btn === "CLR";
+            return (
+              <button
+                key={btn}
+                type="button"
+                onClick={() => pressKey(btn)}
+                style={{
+                  height: "52px",
+                  borderRadius: "14px",
+                  fontSize: isSpecial ? "0.92rem" : "1.32rem",
+                  fontWeight: 700,
+                  background: isSpecial ? "rgba(180,40,60,0.22)" : "rgba(255,255,255,0.08)",
+                  border: isSpecial
+                    ? "1.2px solid rgba(239,68,68,0.4)"
+                    : "1.2px solid rgba(212,175,55,0.35)",
+                  color: isSpecial ? "#fca5a5" : "#fce8b2",
+                  cursor: "pointer",
+                  touchAction: "manipulation",
+                  WebkitTapHighlightColor: "transparent",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  transition: "transform 0.1s ease, background 0.15s ease",
+                  userSelect: "none",
+                  WebkitUserSelect: "none",
+                }}
+              >
+                {btn === "DEL" ? "⌫ DEL" : btn}
+              </button>
+            );
+          })}
         </div>
       </div>
 
