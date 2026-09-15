@@ -13,14 +13,33 @@ export interface Wish {
 const DATA_FILE = path.join(process.cwd(), 'data', 'wishes.json');
 const ADMIN_SECRET = '2006';
 
+function getTargetFilePath(): string {
+  // In Vercel serverless environments, process.cwd() is read-only.
+  // /tmp is the guaranteed writable scratch directory.
+  if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
+    const tmpFile = path.join('/tmp', 'wishes.json');
+    if (!fs.existsSync(tmpFile)) {
+      try {
+        const seed = fs.existsSync(DATA_FILE) ? fs.readFileSync(DATA_FILE, 'utf-8') : '[]';
+        fs.writeFileSync(tmpFile, seed, 'utf-8');
+      } catch {}
+    }
+    return tmpFile;
+  }
+  return DATA_FILE;
+}
+
 function getLocalWishes(): Wish[] {
   try {
-    if (!fs.existsSync(DATA_FILE)) {
-      fs.mkdirSync(path.dirname(DATA_FILE), { recursive: true });
-      fs.writeFileSync(DATA_FILE, '[]', 'utf-8');
+    const filePath = getTargetFilePath();
+    if (!fs.existsSync(filePath)) {
+      try {
+        fs.mkdirSync(path.dirname(filePath), { recursive: true });
+        fs.writeFileSync(filePath, '[]', 'utf-8');
+      } catch {}
       return [];
     }
-    const raw = fs.readFileSync(DATA_FILE, 'utf-8');
+    const raw = fs.readFileSync(filePath, 'utf-8');
     const cleaned = raw.replace(/^\uFEFF/, '').trim();
     const parsed: Wish[] = cleaned ? JSON.parse(cleaned) : [];
     // Ensure every wish has an id and hidden property
@@ -47,8 +66,9 @@ function getLocalWishes(): Wish[] {
 
 function saveLocalWishes(wishes: Wish[]) {
   try {
-    fs.mkdirSync(path.dirname(DATA_FILE), { recursive: true });
-    fs.writeFileSync(DATA_FILE, JSON.stringify(wishes, null, 2), 'utf-8');
+    const filePath = getTargetFilePath();
+    fs.mkdirSync(path.dirname(filePath), { recursive: true });
+    fs.writeFileSync(filePath, JSON.stringify(wishes, null, 2), 'utf-8');
   } catch (err) {
     console.error('Error saving local wishes:', err);
   }

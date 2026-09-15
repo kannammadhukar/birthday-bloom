@@ -917,7 +917,7 @@ export default function Home() {
                     if (isVideoPlaying) {
                       tributeVideoRef.current.pause();
                     } else {
-                      tributeVideoRef.current.play();
+                      tributeVideoRef.current.play().catch(() => {});
                     }
                   }}
                   style={{
