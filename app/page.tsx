@@ -800,6 +800,49 @@ export default function Home() {
             </div>
 
           </div>
+
+          {/* Quick-Scroll Cue & Smooth Scroll Button */}
+          <div
+            className="mobile-scroll-cue-container"
+            style={{
+              textAlign: "center",
+              marginTop: 12,
+              marginBottom: 4,
+              width: "100%",
+              zIndex: 10,
+              display: "flex",
+              justifyContent: "center",
+            }}
+          >
+            <button
+              onClick={() => {
+                document.getElementById("journey-section")?.scrollIntoView({ behavior: "smooth" });
+              }}
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                document.getElementById("journey-section")?.scrollIntoView({ behavior: "smooth" });
+              }}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "8px 18px",
+                borderRadius: 9999,
+                background: "linear-gradient(135deg, rgba(251,113,133,0.2), rgba(212,175,55,0.2))",
+                border: "1px solid rgba(251,113,133,0.4)",
+                color: "#ffe4e6",
+                fontSize: "0.82rem",
+                fontWeight: 600,
+                cursor: "pointer",
+                backdropFilter: "blur(10px)",
+                boxShadow: "0 4px 16px rgba(0,0,0,0.3)",
+                touchAction: "manipulation",
+              }}
+            >
+              <span>📜 Scroll Down to Divija&apos;s Story, Letter &amp; Reel</span>
+              <span style={{ animation: "bounceDown 1.5s infinite", display: "inline-block" }}>⬇️</span>
+            </button>
+          </div>
         </section>
 
         {/* ── Divija's Story Journey (The Living Sketchbook) ── */}

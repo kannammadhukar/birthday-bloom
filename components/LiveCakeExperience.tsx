@@ -62,7 +62,7 @@ export default function LiveCakeExperience({
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // ── Rotation Control ──
-  const [autoRotate, setAutoRotate] = useState(true);
+  const [autoRotate, setAutoRotate] = useState(false);
 
   // ── 3D Cake Placement & AR Transformation States (Freedom of Movement) ──
   // Studio View: y = -1.05 (naturally grounded at the bottom on the celebration banquet table)
@@ -197,8 +197,9 @@ export default function LiveCakeExperience({
   });
   const isMouseDownRef = useRef(false);
 
-  // Screen Tap-to-Place logic (Raycasts screen tap to horizontal table plane)
+  // Screen Tap-to-Place logic (Raycasts screen tap to horizontal table plane in AR camera mode only)
   const handleScreenTapToPlace = (clientX: number, clientY: number) => {
+    if (!cameraActive) return;
     const container = containerRef.current;
     if (!container) return;
     const rect = container.getBoundingClientRect();
@@ -226,6 +227,8 @@ export default function LiveCakeExperience({
   };
 
   const handleCanvasTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    // In normal studio view, allow natural 1-finger page scrolling without trapping
+    if (!cameraActive && e.touches.length === 1) return;
     const touches = e.touches;
     const now = performance.now();
 
@@ -264,6 +267,8 @@ export default function LiveCakeExperience({
   };
 
   const handleCanvasTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    // In normal studio view, never hijack 1-finger vertical swipes so page scrolls naturally
+    if (!cameraActive && e.touches.length === 1) return;
     const touches = e.touches;
     const container = containerRef.current;
     if (!container) return;
@@ -310,6 +315,7 @@ export default function LiveCakeExperience({
   };
 
   const handleCanvasTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (!cameraActive) return;
     const elapsed = performance.now() - touchStateRef.current.startTime;
     if (elapsed < 240 && !touchStateRef.current.isMultiTouch && e.changedTouches.length === 1) {
       const touch = e.changedTouches[0];
@@ -1704,7 +1710,7 @@ export default function LiveCakeExperience({
           inset: 0,
           zIndex: 5,
           pointerEvents: "auto",
-          touchAction: "none",
+          touchAction: cameraActive ? "none" : "pan-y",
           cursor: cameraActive ? "grab" : "default",
         }}
       >

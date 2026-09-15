@@ -56,8 +56,11 @@ h1, h2, h3, h4, h5, h6, p, span, blockquote, figcaption {
   word-break: break-word;
 }
 
-/* Prevent accidental pull-to-refresh & scroll bouncing inside 3D interactive canvases */
-.cake-card canvas, .balloon-canvas-wrap canvas, #cake-canvas-container canvas {
+/* Allow fluid 1-finger vertical page scrolling over 3D cake while guarding horizontal gesture */
+.cake-card canvas, #cake-canvas-container canvas, #cake-three-canvas-container canvas {
+  touch-action: pan-y !important;
+}
+.balloon-canvas-wrap canvas {
   touch-action: none !important;
 }
 
@@ -1129,13 +1132,13 @@ input[type="range"]::-moz-range-track {
     flex-direction: column !important;
     justify-content: flex-start !important;
     align-items: center !important;
-    padding: 6px 12px 10px !important;
-    gap: 6px !important;
-    min-height: calc(100dvh - 54px) !important;
-    max-height: calc(100dvh - 54px) !important;
-    height: calc(100dvh - 54px) !important;
+    padding: 8px 12px 18px !important;
+    gap: 8px !important;
+    min-height: auto !important;
+    max-height: none !important;
+    height: auto !important;
     box-sizing: border-box !important;
-    overflow: hidden !important;
+    overflow: visible !important;
   }
   .hero-text {
     margin: 0 !important;
@@ -1167,11 +1170,12 @@ input[type="range"]::-moz-range-track {
     opacity: 0.85 !important;
   }
   .cake-card {
-    flex: 1 !important;
+    flex: none !important;
     width: 100% !important;
     max-width: 480px !important;
-    height: 100% !important;
-    min-height: 0 !important;
+    height: clamp(430px, 66dvh, 520px) !important;
+    min-height: 400px !important;
+    max-height: 68dvh !important;
     border-radius: 20px !important;
     display: flex !important;
     flex-direction: column !important;
@@ -1179,6 +1183,7 @@ input[type="range"]::-moz-range-track {
     overflow: hidden !important;
     position: relative !important;
     box-sizing: border-box !important;
+    touch-action: pan-y !important;
   }
   .cake-canvas-container-box,
   #cake-canvas-container {
@@ -1190,18 +1195,21 @@ input[type="range"]::-moz-range-track {
     display: flex !important;
     flex-direction: column !important;
     padding-bottom: 0 !important;
+    touch-action: pan-y !important;
   }
   .live-cake-wrapper {
     height: 100% !important;
     flex: 1 !important;
     min-height: 0 !important;
     justify-content: space-between !important;
+    touch-action: pan-y !important;
   }
   #cake-three-canvas-container {
     height: 100% !important;
     width: 100% !important;
     flex: 1 !important;
     min-height: 0 !important;
+    touch-action: pan-y !important;
   }
   .cake-controls-dock-responsive {
     padding: 3px 8px !important;
@@ -1428,3 +1436,13 @@ input[type="range"]::-moz-range-track {
     opacity: 0.75;
   }
 }
+
+@keyframes bounceDown {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(4px);
+  }
+}
+

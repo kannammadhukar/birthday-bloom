@@ -773,8 +773,9 @@ function CakeR3FScene({
   onConfettiDone,
   shadowTexture,
   plaqueTexture,
-  autoRotate = true,
+  autoRotate = false,
   isARMode = false,
+  isMobile = false,
   cakeTransform,
   onPlaneHit,
 }: {
@@ -787,6 +788,7 @@ function CakeR3FScene({
   plaqueTexture: THREE.CanvasTexture | null;
   autoRotate?: boolean;
   isARMode?: boolean;
+  isMobile?: boolean;
   cakeTransform?: CakeTransform;
   onPlaneHit?: (point: THREE.Vector3) => void;
 }) {
@@ -854,13 +856,13 @@ function CakeR3FScene({
         </group>
       </Float>
 
-      {/* Orbit controls with camera focused on visual center (active only in studio view) */}
+      {/* Orbit controls with camera focused on visual center (active only on desktop studio view) */}
       <OrbitControls
-        enabled={!isARMode}
+        enabled={!isARMode && !isMobile}
         enablePan={false}
         enableZoom={false}
-        autoRotate={autoRotate && !blown && !sliced && !isARMode}
-        autoRotateSpeed={1.0}
+        enableRotate={!isMobile}
+        autoRotate={false}
         target={[0, isARMode ? -0.8 : 0.26, 0]}
         minPolarAngle={Math.PI / 4.2}
         maxPolarAngle={Math.PI / 2.08}
@@ -883,7 +885,7 @@ export default function CakeScene({
   sliced = false,
   cutting = false,
   confettiTrigger = 0,
-  autoRotate = true,
+  autoRotate = false,
   onToggleBlow,
   isARMode = false,
   cakeTransform,
@@ -989,6 +991,7 @@ export default function CakeScene({
         plaqueTexture={plaqueTexture}
         autoRotate={autoRotate}
         isARMode={isARMode}
+        isMobile={isMobile}
         cakeTransform={cakeTransform}
         onPlaneHit={onPlaneHit}
       />
