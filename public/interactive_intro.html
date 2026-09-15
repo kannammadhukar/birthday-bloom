@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>We Have Made Something For You! 🎁 Divija's Birthday</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700;800&family=Mali:wght@600;700;800&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    
+    body {
+      min-height: 100vh;
+      background: radial-gradient(circle at 50% 25%, #3d0d24 0%, #1f0414 55%, #0a0107 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: clamp(10px, 2vh, 24px) clamp(12px, 3vw, 24px);
+      font-family: 'Fredoka', 'Mali', sans-serif;
+      overflow-x: hidden;
+      user-select: none;
+      position: relative;
+    }
+
+    /* Floating Golden Ambient Stars */
+    .star-layer {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 0;
+    }
+    .star {
+      position: absolute;
+      border-radius: 50%;
+      background-color: #ffd166;
+      box-shadow: 0 0 10px rgba(255, 209, 102, 0.8);
+      animation: twinkle 3s infinite ease-in-out alternate;
+    }
+    @keyframes twinkle {
+      0% { opacity: 0.3; transform: scale(0.8); }
+      100% { opacity: 0.9; transform: scale(1.3); }
+    }
+
+    /* Grand Royal Pavilion Card */
+    .pavilion-stage {
+      width: min(860px, 94vw);
+      max-height: 90vh;
+      min-height: min(590px, 86vh);
+      background-color: #ffffff;
+      background-image: linear-gradient(145deg, rgba(255, 255, 255, 0.97) 0%, rgba(255, 249, 242, 0.98) 50%, rgba(254, 243, 230, 0.96) 100%);
+      border-radius: clamp(24px, 3vw, 36px);
+      position: relative;
+      overflow-y: auto;
+      overflow-x: hidden;
+      border: 2px solid rgba(212, 175, 55, 0.7);
+      box-shadow: 
+        0 25px 80px rgba(0, 0, 0, 0.8),
+        0 0 50px rgba(212, 175, 55, 0.3),
+        inset 0 0 0 3px rgba(255, 255, 255, 0.9),
+        inset 0 0 0 5px rgba(212, 175, 55, 0.35);
+      display: flex;
+      flex-direction: column;
+      padding: clamp(16px, 2.8vh, 28px) clamp(16px, 4vw, 36px);
+      z-index: 2;
+    }
+
+    .audio-toggle {
+      position: absolute;
+      top: 14px;
+      right: 16px;
+      z-index: 50;
+      background: linear-gradient(135deg, #fff3cd, #fef3c7);
+      border: 1.5px solid #d4af37;
+      border-radius: 24px;
+      padding: 5px 13px;
+      font-size: clamp(0.72rem, 1.2vw, 0.82rem);
+      font-weight: 700;
+      color: #854d0e;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 4px 12px rgba(212, 175, 55, 0.25);
+      transition: all 0.2s ease;
+    }
+
+    .screen {
+      flex: 1;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      text-align: center;
+      gap: 8px;
+      animation: fadeIn 0.35s ease;
+    }
+    .screen.active {
+      display: flex;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.96); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    /* Subtitle & Titles */
+    .header-sub {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: clamp(1.0rem, 2.2vw, 1.35rem);
+      color: #b45309;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .header-title {
+      font-size: clamp(1.7rem, 4.2vw, 2.6rem);
+      font-weight: 900;
+      background: linear-gradient(135deg, #d62839 0%, #b91c1c 50%, #881337 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      line-height: 1.15;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin: 2px 0 4px;
+    }
+    .header-prompt {
+      font-size: clamp(1.1rem, 2.4vw, 1.45rem);
+      font-weight: 800;
+      color: #1f2937;
+    }
+
+    /* Speech Bubble */
+    .speech-bubble {
+      background: linear-gradient(135deg, #ffffff 0%, #fffbf2 100%);
+      border: 2px solid #e0a93b;
+      border-radius: 20px;
+      padding: 10px 18px;
+      max-width: min(520px, 90vw);
+      box-shadow: 0 8px 24px rgba(212, 175, 55, 0.22);
+      margin-bottom: 8px;
+      position: relative;
+    }
+    .speech-bubble p {
+      font-size: clamp(0.92rem, 1.9vw, 1.12rem);
+      font-weight: 700;
+      color: #831843;
+      line-height: 1.35;
+    }
+    .speech-bubble::after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0; height: 0;
+      border-left: 8px solid transparent;
+      border-right: 8px solid transparent;
+      border-top: 8px solid #e0a93b;
+    }
+
+    /* Character Wrapper */
+    .char-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      margin: 4px 0;
+    }
+    .char-wrap {
+      position: relative;
+      transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .char-img {
+      width: clamp(150px, 24vh, 210px);
+      height: clamp(150px, 24vh, 210px);
+      object-fit: contain;
+      filter: drop-shadow(0 10px 24px rgba(214, 40, 57, 0.25));
+    }
+    .tap-badge {
+      position: absolute;
+      bottom: -2px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, #d62839, #b91c1c);
+      color: #ffffff;
+      font-size: clamp(0.65rem, 1.1vw, 0.75rem);
+      font-weight: 800;
+      padding: 3px 12px;
+      borderRadius: 14px;
+      white-space: nowrap;
+      box-shadow: 0 3px 10px rgba(214, 40, 57, 0.4);
+    }
+
+    /* SIDE-BY-SIDE BUTTON ROW */
+    .btn-row {
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      gap: clamp(10px, 2vw, 18px);
+      margin: 6px auto 4px;
+    }
+    .btn-yes {
+      flex: 1;
+      padding: clamp(11px, 2vh, 15px) clamp(16px, 3vw, 28px);
+      border-radius: 32px;
+      background: linear-gradient(135deg, #e63946 0%, #d62839 50%, #b91c1c 100%);
+      border: 1.5px solid rgba(255, 215, 0, 0.65);
+      color: #ffffff;
+      font-size: clamp(1.05rem, 2.2vw, 1.3rem);
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(214, 40, 57, 0.45), 0 0 16px rgba(255, 209, 102, 0.35), 0 3px 0 #991b1b;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .btn-no {
+      flex: 1;
+      padding: clamp(11px, 2vh, 15px) clamp(16px, 3vw, 28px);
+      border-radius: 32px;
+      background: linear-gradient(135deg, #ffffff 0%, #fffdf8 100%);
+      border: 2.5px solid #d62839;
+      color: #d62839;
+      font-size: clamp(1.05rem, 2.2vw, 1.3rem);
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      cursor: pointer;
+      box-shadow: 0 5px 14px rgba(0, 0, 0, 0.08), 0 2.5px 0 rgba(214, 40, 57, 0.3);
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Grand Gift Box */
+    .grand-box-card {
+      width: clamp(125px, 19vh, 160px);
+      height: clamp(125px, 19vh, 160px);
+      background: radial-gradient(circle at 35% 35%, #ff4d6d 0%, #d62839 60%, #881337 100%);
+      border-radius: 28px;
+      position: relative;
+      box-shadow: 0 16px 40px rgba(214, 40, 57, 0.5), 0 0 35px rgba(255, 209, 102, 0.6);
+      border: 3.5px solid #ffd166;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    .ribbon-vert {
+      position: absolute;
+      width: 28px;
+      height: 100%;
+      background: linear-gradient(90deg, #ffe082 0%, #ffd166 50%, #cca000 100%);
+      box-shadow: 0 0 10px rgba(255, 209, 102, 0.7);
+    }
+    .ribbon-horiz {
+      position: absolute;
+      width: 100%;
+      height: 28px;
+      background: linear-gradient(180deg, #ffe082 0%, #ffd166 50%, #cca000 100%);
+      box-shadow: 0 0 10px rgba(255, 209, 102, 0.7);
+    }
+    .ribbon-bow {
+      position: absolute;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #fff3b0 0%, #ffd166 60%, #e09f3e 100%);
+      border: 3px solid #ffffff;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+      z-index: 3;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+    }
+
+    /* 23 Badge */
+    .badge-23 {
+      width: clamp(125px, 19vh, 155px);
+      height: clamp(125px, 19vh, 155px);
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #fff3b0 0%, #ffd166 45%, #d4af37 80%, #996515 100%);
+      box-shadow: 0 16px 45px rgba(212, 175, 55, 0.65), 0 0 35px rgba(255, 209, 102, 0.7), inset 0 0 12px #ffffff;
+      border: 4px solid #ffffff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      animation: pulse 2s infinite ease-in-out;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+
+    #confetti-canvas {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 100;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Ambient Starfield -->
+  <div class="star-layer" id="starLayer"></div>
+
+  <!-- Main Grand Pavilion Stage -->
+  <div class="pavilion-stage">
+    <canvas id="confetti-canvas"></canvas>
+
+    <!-- Music Control Button -->
+    <button class="audio-toggle" id="musicToggleBtn" onclick="toggleMusic()">
+      <span id="musicIcon">🎵</span>
+      <span id="musicText">Music: Bouncy Dance</span>
+    </button>
+
+    <!-- SCREEN 1: ARE YOU EXCITED? -->
+    <div class="screen active" id="screen-1">
+      <div>
+        <p class="header-sub">✨ We have made ✨</p>
+        <h1 class="header-title">Something For You!</h1>
+        <p class="header-prompt">Are you excited?</p>
+      </div>
+
+      <div class="char-container" onclick="handlePoke(1)">
+        <div class="speech-bubble" id="bubble-1">
+          <p id="quip-1">Divija akka! Memu mee kosam oka bumper surprise chesam! 😉✨</p>
+        </div>
+        <div class="char-wrap" id="char-wrap-1">
+          <img src="/images/shinchan_dance.gif" alt="Shinchan Dancing" class="char-img">
+          <div class="tap-badge">👆 TAP SHIN CHAN</div>
+        </div>
+      </div>
+
+      <!-- Side-by-Side Canva Buttons -->
+      <div class="btn-row">
+        <button class="btn-yes" onclick="goToScreen(3)">YES</button>
+        <button class="btn-no" onclick="handleNo()">NO</button>
+      </div>
+    </div>
+
+    <!-- SCREEN 2: HOW DARE YOU! -->
+    <div class="screen" id="screen-2">
+      <div>
+        <p class="header-sub">💔 How dare you say NO?!</p>
+        <h1 class="header-title">Look What You Did!</h1>
+        <p class="header-prompt">Shin Chan is crying now!</p>
+      </div>
+
+      <div class="char-container" onclick="handlePoke(2)">
+        <div class="speech-bubble" id="bubble-2" style="background: #fff0f3; border-color: #d62839;">
+          <p id="quip-2" style="color: #991b1b;">Emantivi emantivi!? Maaku NO antava!? Enthakani dhairyam meeku Divija akka!? 😤💢</p>
+        </div>
+        <div class="char-wrap" id="char-wrap-2">
+          <img src="/images/shinchan_tantrum.gif" alt="Shinchan Crying" class="char-img">
+          <div class="tap-badge">😭 TAP CRYING SHIN CHAN</div>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-yes" style="width: 100%;" onclick="goToScreen(1)">TRY AGAIN ↺</button>
+      </div>
+    </div>
+
+    <!-- SCREEN 3: ARE YOU REALLY EXCITED? -->
+    <div class="screen" id="screen-3">
+      <div>
+        <p class="header-sub">🌸 Awww yay! 🌸</p>
+        <h1 class="header-title">Are You Really Excited?</h1>
+        <p class="header-prompt">Shin Chan is blushing so hard!</p>
+      </div>
+
+      <div class="char-container" onclick="handlePoke(3)">
+        <div class="speech-bubble" id="bubble-3" style="background: #fffbf5;">
+          <p id="quip-3">Nijamga excited ga unnara? Ammo... naku abbo entha siggochesthondo! Hehehe! 🙈💛</p>
+        </div>
+        <div class="char-wrap" id="char-wrap-3">
+          <img src="/images/shinchan_shy.gif" alt="Shinchan Shy" class="char-img">
+          <div class="tap-badge">🙈 TAP SHY SHIN CHAN</div>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-yes" onclick="goToScreen(4)">YES!</button>
+        <button class="btn-yes" style="background: linear-gradient(135deg, #ff4d6d, #d62839);" onclick="goToScreen(4)">OF COURSE YES!</button>
+      </div>
+    </div>
+
+    <!-- SCREEN 4: 1 GRAND GIFT BOX -->
+    <div class="screen" id="screen-4">
+      <div>
+        <p class="header-sub">🎁 Here is your special 🎁</p>
+        <h1 class="header-title">Grand Birthday Gift!</h1>
+        <p class="header-prompt">Tap the Gift Box to unwrap!</p>
+      </div>
+
+      <div class="char-container" onclick="handlePoke(4)">
+        <div class="speech-bubble" id="bubble-4">
+          <p id="quip-4">Idhigo akka mana special birthday gift box! Tap cheyyi, magic chudu! 🎁✨</p>
+        </div>
+        <div class="char-wrap" id="char-wrap-4">
+          <img src="/images/shinchan_cheer.gif" alt="Shinchan Cheering" class="char-img" style="width: clamp(120px, 18vh, 160px); height: clamp(120px, 18vh, 160px);">
+          <div class="tap-badge">✨ TAP SHIN CHAN</div>
+        </div>
+      </div>
+
+      <!-- Exactly 1 Grand Gift Box -->
+      <div style="display: flex; flex-direction: column; align-items: center; margin: 4px 0 8px;">
+        <div class="grand-box-card" id="grandGiftBox" onclick="openGrandGift()">
+          <div class="ribbon-vert"></div>
+          <div class="ribbon-horiz"></div>
+          <div class="ribbon-bow">🎀</div>
+        </div>
+        <div style="margin-top: 8px; background: linear-gradient(135deg, #ffd166, #ffb703); color: #6a040f; font-size: clamp(0.82rem, 1.5vw, 0.95rem); font-weight: 800; padding: 6px 18px; border-radius: 20px; box-shadow: 0 4px 14px rgba(255, 183, 3, 0.45); cursor: pointer;" onclick="openGrandGift()">
+          🎁 TAP BOX TO OPEN
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREEN 5: 23 REVEAL & CELEBRATION -->
+    <div class="screen" id="screen-5">
+      <div>
+        <p class="header-sub">👑 Tadaaa! Happy 23rd Birthday! 👑</p>
+        <h1 class="header-title">DIVIJA AKKA!</h1>
+      </div>
+
+      <div style="display: flex; flex-direction: column; align-items: center; margin: 4px 0;">
+        <div class="badge-23">
+          <span style="font-size: clamp(1.1rem, 2.2vw, 1.4rem); margin-top: -4px;">👑</span>
+          <span style="font-size: clamp(2.5rem, 5.5vw, 3.4rem); font-weight: 900; color: #6a040f; line-height: 0.9;">23</span>
+          <span style="font-size: clamp(0.65rem, 1.2vw, 0.75rem); font-weight: 800; color: #6a040f; letter-spacing: 1px; margin-top: 2px;">YEARS OF MAGIC</span>
+        </div>
+      </div>
+
+      <div class="char-container" onclick="handlePoke(5)">
+        <div class="speech-bubble" id="bubble-5">
+          <p id="quip-5">Tadaaa! Divija akka 23rd Birthday! 👑🎉 Ippudu asalu celebration modhalu!</p>
+        </div>
+        <div class="char-wrap" id="char-wrap-5">
+          <img src="/images/shinchan_cheer.gif" alt="Shinchan Party" class="char-img" style="width: clamp(120px, 18vh, 155px); height: clamp(120px, 18vh, 155px);">
+          <div class="tap-badge">🎉 TAP SHIN CHAN</div>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-yes" style="background: linear-gradient(135deg, #ffd166 0%, #ffb703 50%, #fb8500 100%); color: #6a040f; font-size: clamp(1.1rem, 2.4vw, 1.35rem); box-shadow: 0 8px 28px rgba(251, 133, 0, 0.5), 0 0 20px rgba(255, 209, 102, 0.5); border: 2px solid #ffffff;" onclick="enterCelebration()">
+          <span>👑</span> ENTER GALA <span>✨</span>
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // Create Background Stars
+    const starLayer = document.getElementById('starLayer');
+    for (let i = 0; i < 28; i++) {
+      const s = document.createElement('div');
+      s.className = 'star';
+      s.style.top = Math.random() * 100 + '%';
+      s.style.left = Math.random() * 100 + '%';
+      const size = Math.random() * 4 + 2;
+      s.style.width = size + 'px';
+      s.style.height = size + 'px';
+      s.style.animationDelay = (Math.random() * 3) + 's';
+      starLayer.appendChild(s);
+    }
+
+    // Dialogue Data
+    const quips1 = [
+      "Divija akka! Memu mee kosam oka bumper surprise chesam! 😉✨",
+      "Arey Divija akka, ala gelikithe siggochesthondi! 🙈",
+      "Nannu chusi jealous ga undha? Naa dance steps super kadha! 💃",
+      "Chocobi biscuit lu isthe inka baaga dance vestha! 🍪",
+      "Twaraga YES kottu akka, surprise wait chesthondi! ✨"
+    ];
+    let idx1 = 0;
+
+    const quips2 = [
+      "Emantivi emantivi!? Maaku NO antava!? Enthakani dhairyam meeku Divija akka!? 😤💢",
+      "Action Kamen ki cheppi neeku pedda punishment istha choodu! 🦸‍♂️💥",
+      "Chocobi biscuits anni nene tinestha, neeku okkati kooda ivvanu po! 🍪😤",
+      "Malli TRY AGAIN kottu akka, ledhante nenu inka gattiga edustha! 😭",
+      "Asalu ikkada NO ane option ye ledhu akka! Naa maata vinava!? 😤"
+    ];
+    let idx2 = 0;
+
+    const quips3 = [
+      "Nijamga excited ga unnara? Ammo... naku abbo entha siggochesthondo! Hehehe! 🙈💛",
+      "Ammo! Nalo unna siggu motham chusesthunnara! Hehehe! 🙈",
+      "Nijamga promise cheyyi akka, nannu chusi navvavu kadha? 🙈",
+      "Divija akka pogidithe naku kalla ninda aanandabashpaalu vasthunnayi! 🥺",
+      "Both buttons YES ye akka! Nuvvu eppatiki escape avvalevu! 😜"
+    ];
+    let idx3 = 0;
+
+    const quips4 = [
+      "Idhigo akka mana special birthday gift box! Tap cheyyi, magic chudu! 🎁✨",
+      "Idhe akka mana super-duper surprise box! Nenu daachi pettanu, tap cheyyi! 🎁",
+      "Box lopala emundho telsa? 23 years of pure sweetness! 🍯",
+      "Nenu daachi pettanu akka, twaraga tap cheyyi, naku aagatledu! 🤩",
+      "Okkasari touch cheyyi akka, bomb explosion kadhu, super surprise!"
+    ];
+    let idx4 = 0;
+
+    const quips5 = [
+      "Tadaaa! Divija akka 23rd Birthday! 👑🎉 Ippudu asalu celebration modhalu!",
+      "Happy 23rd Birthday Divija Akka! 23 looks gorgeous on you! 💖",
+      "Enter Gala button kottu akka! Lopala 3D cake, Jugraafiya video and memories ready ga unnayi! 🎂👑"
+    ];
+    let idx5 = 0;
+
+    // Approved Real Shinchan Audio Engine
+    const SCREEN_BGMS = {
+      1: '/audio/shinchan_approved/bgm_sc1_naughty.mp3',
+      2: '/audio/shinchan_approved/bgm_sc2_crying_melodrama.mp3',
+      3: '/audio/shinchan_approved/bgm_sc3_romantic_waltz.mp3',
+      4: '/audio/shinchan_approved/bgm_sc4_curious_box.mp3',
+      5: '/audio/shinchan_approved/bgm_sc5_party_celebration.mp3'
+    };
+    const DLG_SCREEN3_LAUGH = '/audio/shinchan_approved/dlg_sc3_blush_laugh.mp3';
+
+    let currentBgmAudio = null;
+    let currentDlgAudio = null;
+    let audioPlaying = true;
+    let currentScreen = 1;
+    const audioCache = {};
+
+    function preloadAudios() {
+      const urls = Object.values(SCREEN_BGMS).concat([DLG_SCREEN3_LAUGH]);
+      urls.forEach(u => {
+        if (!audioCache[u]) {
+          const a = new Audio(u);
+          a.preload = 'auto';
+          audioCache[u] = a;
+        }
+      });
+    }
+    preloadAudios();
+
+    function playScreenBgm(screenNum) {
+      const url = SCREEN_BGMS[screenNum];
+      if (!url) return;
+
+      if (currentBgmAudio) {
+        try {
+          currentBgmAudio.pause();
+          currentBgmAudio.currentTime = 0;
+        } catch(e) {}
+      }
+
+      if (!audioPlaying) return;
+
+      let a = audioCache[url];
+      if (!a) {
+        a = new Audio(url);
+        audioCache[url] = a;
+      }
+      currentBgmAudio = a;
+      a.loop = true;
+      a.volume = 0.85;
+      a.play().catch(() => {});
+      updateMusicLabel();
+    }
+
+    function playScreen3Giggle() {
+      if (!audioPlaying) return;
+      if (currentBgmAudio) {
+        currentBgmAudio.volume = 0.3;
+      }
+      let a = audioCache[DLG_SCREEN3_LAUGH];
+      if (!a) {
+        a = new Audio(DLG_SCREEN3_LAUGH);
+        audioCache[DLG_SCREEN3_LAUGH] = a;
+      }
+      currentDlgAudio = a;
+      a.currentTime = 0;
+      a.volume = 1.0;
+      a.play().catch(() => {});
+      a.onended = () => {
+        if (currentBgmAudio) {
+          currentBgmAudio.volume = 0.85;
+        }
+      };
+    }
+
+    function toggleMusic() {
+      audioPlaying = !audioPlaying;
+      const icon = document.getElementById('musicIcon');
+      const text = document.getElementById('musicText');
+      if (audioPlaying) {
+        icon.textContent = '🎵';
+        playScreenBgm(currentScreen);
+      } else {
+        icon.textContent = '🔇';
+        text.textContent = 'Music Muted';
+        if (currentBgmAudio) {
+          try { currentBgmAudio.pause(); } catch(e) {}
+        }
+        if (currentDlgAudio) {
+          try { currentDlgAudio.pause(); } catch(e) {}
+        }
+      }
+    }
+
+    function updateMusicLabel() {
+      const titles = {
+        1: 'Naughty Dance',
+        2: 'Melodrama Crying',
+        3: 'Romantic Waltz',
+        4: 'Curious Mystery',
+        5: 'Party Celebration'
+      };
+      if (audioPlaying) {
+        document.getElementById('musicText').textContent = 'Music: ' + (titles[currentScreen] || 'Shinchan BGM');
+      }
+    }
+
+    window.addEventListener('click', function autoSound() {
+      playScreenBgm(currentScreen);
+      window.removeEventListener('click', autoSound);
+    }, { once: true });
+    window.addEventListener('touchstart', function autoSound() {
+      playScreenBgm(currentScreen);
+      window.removeEventListener('touchstart', autoSound);
+    }, { once: true });
+
+    function handlePoke(screenNum) {
+      const wrap = document.getElementById('char-wrap-' + screenNum);
+      if (wrap) {
+        wrap.style.transform = 'scale(1.14) rotate(7deg)';
+        setTimeout(() => wrap.style.transform = '', 220);
+      }
+
+      if (screenNum === 1) {
+        idx1 = (idx1 + 1) % quips1.length;
+        document.getElementById('quip-1').textContent = quips1[idx1];
+      } else if (screenNum === 2) {
+        idx2 = (idx2 + 1) % quips2.length;
+        document.getElementById('quip-2').textContent = quips2[idx2];
+      } else if (screenNum === 3) {
+        playScreen3Giggle();
+        idx3 = (idx3 + 1) % quips3.length;
+        document.getElementById('quip-3').textContent = quips3[idx3];
+      } else if (screenNum === 4) {
+        idx4 = (idx4 + 1) % quips4.length;
+        document.getElementById('quip-4').textContent = quips4[idx4];
+      } else if (screenNum === 5) {
+        idx5 = (idx5 + 1) % quips5.length;
+        document.getElementById('quip-5').textContent = quips5[idx5];
+      }
+    }
+
+    function goToScreen(num) {
+      currentScreen = num;
+      playScreenBgm(num);
+
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      const target = document.getElementById('screen-' + num);
+      if (target) target.classList.add('active');
+    }
+
+    function handleNo() {
+      goToScreen(2);
+    }
+
+    function openGrandGift() {
+      const box = document.getElementById('grandGiftBox');
+      box.style.transform = 'scale(1.2) rotate(6deg)';
+      triggerConfetti();
+
+      setTimeout(() => {
+        goToScreen(5);
+        triggerConfetti();
+      }, 700);
+    }
+
+    function enterCelebration() {
+      if (currentBgmAudio) {
+        try { currentBgmAudio.pause(); } catch(e) {}
+      }
+      window.location.href = '/';
+    }
+
+    // Confetti Engine
+    const canvas = document.getElementById('confetti-canvas');
+    const ctx = canvas.getContext('2d');
+    let confettiParticles = [];
+    function resizeCanvas() {
+      canvas.width = canvas.parentElement.clientWidth;
+      canvas.height = canvas.parentElement.clientHeight;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    function triggerConfetti() {
+      const colors = ['#e63946', '#ffd166', '#06d6a0', '#118ab2', '#ff9f1c', '#f72585'];
+      for (let i = 0; i < 90; i++) {
+        confettiParticles.push({
+          x: canvas.width / 2 + (Math.random() - 0.5) * 60,
+          y: canvas.height / 2 + (Math.random() - 0.5) * 60,
+          w: Math.random() * 9 + 5,
+          h: Math.random() * 5 + 3,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          vx: (Math.random() - 0.5) * 12,
+          vy: -Math.random() * 14 - 4,
+          rot: Math.random() * 360,
+          vrot: (Math.random() - 0.5) * 18,
+          alpha: 1
+        });
+      }
+    }
+
+    function updateConfetti() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (let i = confettiParticles.length - 1; i >= 0; i--) {
+        const p = confettiParticles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.45;
+        p.rot += p.vrot;
+        p.alpha -= 0.012;
+        if (p.alpha <= 0 || p.y > canvas.height + 20) {
+          confettiParticles.splice(i, 1);
+          continue;
+        }
+        ctx.save();
+        ctx.globalAlpha = p.alpha;
+        ctx.translate(p.x, p.y);
+        ctx.rotate((p.rot * Math.PI) / 180);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        ctx.restore();
+      }
+      requestAnimationFrame(updateConfetti);
+    }
+    updateConfetti();
+  </script>
+</body>
+</html>
