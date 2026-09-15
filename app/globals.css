@@ -1344,4 +1344,17 @@ input[type="range"]::-moz-range-track {
   }
 }
 
+/* Smooth entrance animation for Main Celebration Gala */
+@keyframes fadeInCelebration {
+  0% {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
 

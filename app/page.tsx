@@ -141,27 +141,28 @@ export default function Home() {
         localStorage.removeItem("divija_auth_role");
       } catch {}
 
-      // Defer audio — don't preload the full MP3 on page load.
-      // It will be loaded on first user interaction (play button / blow candles).
-      // This removes a 4MB download from the critical path on first visit.
-
-      const keyPhotos = [
-        "/images/photo_25.jpg",
-        "/images/gift_animation/balloon1.png",
-        "/images/gift_animation/balloon2.png",
-        "/images/gift_animation/hat.png",
-        "/images/gift_animation/smiley_icon.png",
-        "/images/gift_animation/1.png",
-        "/images/gift_animation/heart_letter.gif",
-        "/images/gift_animation/love_img.gif",
-        "/images/gift_animation/mewmew.gif",
-      ];
-      keyPhotos.forEach((src) => {
-        const img = new window.Image();
-        img.src = src;
-      });
     }
   }, []);
+
+  // Preload gift animation assets only after passcode unlock (not on initial gate load)
+  useEffect(() => {
+    if (!passcodeUnlocked) return;
+    const keyPhotos = [
+      "/images/photo_25.jpg",
+      "/images/gift_animation/balloon1.png",
+      "/images/gift_animation/balloon2.png",
+      "/images/gift_animation/hat.png",
+      "/images/gift_animation/smiley_icon.png",
+      "/images/gift_animation/1.png",
+      "/images/gift_animation/heart_letter.gif",
+      "/images/gift_animation/love_img.gif",
+      "/images/gift_animation/mewmew.gif",
+    ];
+    keyPhotos.forEach((src) => {
+      const img = new window.Image();
+      img.src = src;
+    });
+  }, [passcodeUnlocked]);
 
   // Sync AR camera state across header settings and cake experience
   useEffect(() => {
@@ -595,26 +596,49 @@ export default function Home() {
         />
       )}
 
-
+      {/* ── Continuous Soundtrack: Samajavaragamana (Deferred preload: 0kb upfront) ── */}
+      <audio
+        ref={medleyAudioRef}
+        src={currentTrack.src}
+        preload="none"
+        loop={false}
+        onPlay={() => setIsMedleyPlaying(true)}
+        onPause={() => setIsMedleyPlaying(false)}
+        onEnded={() => {
+          // If Samajavaragamana completes, loop and keep playing continuously from start!
+          if (medleyAudioRef.current) {
+            medleyAudioRef.current.currentTime = 0.0;
+            setMedleyTime(0.0);
+            medleyAudioRef.current.play().then(() => setIsMedleyPlaying(true)).catch(() => {});
+          }
+        }}
+        onTimeUpdate={() => {
+          if (medleyAudioRef.current) {
+            setMedleyTime(medleyAudioRef.current.currentTime);
+            if (medleyAudioRef.current.duration) {
+              setMedleyDuration(medleyAudioRef.current.duration);
+            }
+          }
+        }}
+        onLoadedMetadata={() => {
+          if (medleyAudioRef.current && medleyAudioRef.current.duration) {
+            setMedleyDuration(medleyAudioRef.current.duration);
+          }
+        }}
+      />
 
       {/* ══════════════════════════════════════════════
-          MAIN APP
+          MAIN APP (Deferred until intro finishes - zero initial 3D/WASM CPU load)
       ══════════════════════════════════════════════ */}
-      <div
-        id="main-celebration-app"
-        style={{
-          position: "relative",
-          zIndex: 2,
-          opacity: introShown ? 1 : 0,
-          visibility: introShown ? "visible" : "hidden",
-          height: introShown ? "auto" : "0px",
-          maxHeight: introShown ? "none" : "0px",
-          overflow: introShown ? "visible" : "hidden",
-          transition: "opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1), transform 0.85s cubic-bezier(0.16, 1, 0.3, 1)",
-          transform: introShown ? "translateY(0)" : "translateY(18px)",
-          pointerEvents: introShown ? "auto" : "none",
-        }}
-      >
+      {introShown && (
+        <div
+          id="main-celebration-app"
+          style={{
+            position: "relative",
+            zIndex: 2,
+            animation: "fadeInCelebration 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+          }}
+        >
 
         {/* ── Header ── */}
         <header className="header-nav">
@@ -748,36 +772,6 @@ export default function Home() {
               />
             </div>
 
-            {/* Audio element: Samajavaragamana for entire website */}
-            <audio
-              ref={medleyAudioRef}
-              src={currentTrack.src}
-              preload="auto"
-              loop={false}
-              onPlay={() => setIsMedleyPlaying(true)}
-              onPause={() => setIsMedleyPlaying(false)}
-              onEnded={() => {
-                // If Samajavaragamana completes, loop and keep playing continuously from start!
-                if (medleyAudioRef.current) {
-                  medleyAudioRef.current.currentTime = 0.0;
-                  setMedleyTime(0.0);
-                  medleyAudioRef.current.play().then(() => setIsMedleyPlaying(true)).catch(() => {});
-                }
-              }}
-              onTimeUpdate={() => {
-                if (medleyAudioRef.current) {
-                  setMedleyTime(medleyAudioRef.current.currentTime);
-                  if (medleyAudioRef.current.duration) {
-                    setMedleyDuration(medleyAudioRef.current.duration);
-                  }
-                }
-              }}
-              onLoadedMetadata={() => {
-                if (medleyAudioRef.current && medleyAudioRef.current.duration) {
-                  setMedleyDuration(medleyAudioRef.current.duration);
-                }
-              }}
-            />
           </div>
         </section>
 
@@ -1352,6 +1346,7 @@ export default function Home() {
           </div>
         </section>
       </div>
+      )}
 
       {/* ── High-Definition Photo Zoom Modal for Polaroid Gallery / Memory Vault ── */}
       <PhotoZoomModal

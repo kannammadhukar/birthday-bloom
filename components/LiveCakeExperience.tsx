@@ -156,18 +156,7 @@ export default function LiveCakeExperience({
     isBlowingFaceRef.current = isBlowingFace;
   }, [isBlowingFace]);
 
-  // Lazy-load MediaPipe FaceLandmarker in idle time so it never blocks initial page load or animations
-  useEffect(() => {
-    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
-      const handle = (window as any).requestIdleCallback(
-        () => {
-          initFaceLandmarker();
-        },
-        { timeout: 10000 }
-      );
-      return () => (window as any).cancelIdleCallback?.(handle);
-    }
-  }, []);
+
 
   function showToast(msg: string, durationMs = 3800) {
     setToastMessage(msg);

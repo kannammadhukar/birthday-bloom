@@ -111,16 +111,14 @@ export default function ShinchanIntro({ onDone }: Props) {
 
   const DLG_SCREEN3_LAUGH = "/audio/shinchan_approved/dlg_sc3_blush_laugh.mp3"; // Shy Blushing Giggle ("Hehehehe!")
 
-  // Preload all approved audio tracks
+  // Preload only Screen 1 BGM on mount for instant zero-lag start
   useEffect(() => {
-    const urls = Object.values(SCREEN_BGMS).concat([DLG_SCREEN3_LAUGH]);
-    urls.forEach((u) => {
-      if (!audioCacheRef.current[u]) {
-        const a = new Audio(u);
-        a.preload = "auto";
-        audioCacheRef.current[u] = a;
-      }
-    });
+    const s1 = SCREEN_BGMS[1];
+    if (s1 && !audioCacheRef.current[s1]) {
+      const a = new Audio(s1);
+      a.preload = "auto";
+      audioCacheRef.current[s1] = a;
+    }
   }, []);
 
   // Lock document scroll to (0,0) when Shinchan intro is active
@@ -224,6 +222,14 @@ export default function ShinchanIntro({ onDone }: Props) {
       stopDialogueAudio();
     }
     playScreenBgm(screen);
+
+    // Warm up next track so upcoming screen transition is instantaneous
+    const nextTrack = SCREEN_BGMS[screen + 1];
+    if (nextTrack && !audioCacheRef.current[nextTrack]) {
+      const a = new Audio(nextTrack);
+      a.preload = "auto";
+      audioCacheRef.current[nextTrack] = a;
+    }
   }, [screen]);
 
   // Toggle Music On / Off

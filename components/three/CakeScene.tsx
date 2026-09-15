@@ -901,6 +901,16 @@ export default function CakeScene({
 }) {
   const [showConfetti, setShowConfetti] = useState(false);
   const [hasWebGL, setHasWebGL] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(hover: none) and (pointer: coarse)");
+    setIsMobile(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
 
   const shadowTexture = useMemo(() => {
     if (typeof document === "undefined") return null;
@@ -948,10 +958,15 @@ export default function CakeScene({
     <Canvas
       id="cake-three-canvas"
       className="cake-three-canvas"
-      dpr={[1, 1.5]}
+      dpr={isMobile ? [1, 1.15] : [1, 1.5]}
       camera={{ position: [0, 1.35, 9.2], fov: 44 }}
       style={{ width: "100%", height: "100%", background: "transparent" }}
-      gl={{ antialias: true, alpha: true, powerPreference: "high-performance", preserveDrawingBuffer: true }}
+      gl={{
+        antialias: !isMobile,
+        alpha: true,
+        powerPreference: isMobile ? "default" : "high-performance",
+        preserveDrawingBuffer: true,
+      }}
       onCreated={({ gl }) => {
         gl.domElement.addEventListener(
           "webglcontextlost",
