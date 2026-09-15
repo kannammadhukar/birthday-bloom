@@ -65,12 +65,13 @@ export default function LiveCakeExperience({
   const [autoRotate, setAutoRotate] = useState(true);
 
   // ── 3D Cake Placement & AR Transformation States (Freedom of Movement) ──
-  // By default, y is -1.55 (significantly lowered onto the table, completely clear of the user's face!)
+  // Studio View: y = -1.05 (naturally grounded at the bottom on the celebration banquet table)
+  // AR Camera Mode: y = -1.55 (lowered onto real table, leaving top 60% completely clear for face)
   const [cakeTransform, setCakeTransform] = useState<CakeTransform>({
     x: 0,
-    y: -1.55,
+    y: -1.05,
     z: 0,
-    scale: 0.88,
+    scale: 0.94,
     rotationY: 0,
   });
   const [placementPing, setPlacementPing] = useState<{ x: number; y: number } | null>(null);
@@ -79,13 +80,19 @@ export default function LiveCakeExperience({
     cakeTransformRef.current = cakeTransform;
   }, [cakeTransform]);
 
-  // Adjust default Y placement when toggling between Studio View (centered) and AR Camera (tabletop)
+  // Adjust default Y placement when toggling between Studio View and AR Camera
   useEffect(() => {
     if (cameraActive) {
       setCakeTransform((prev) => ({
         ...prev,
-        y: prev.y > -0.8 ? -1.55 : prev.y,
-        scale: prev.scale > 1.2 ? 0.88 : prev.scale,
+        y: -1.55,
+        scale: 0.88,
+      }));
+    } else {
+      setCakeTransform((prev) => ({
+        ...prev,
+        y: -1.05,
+        scale: 0.94,
       }));
     }
   }, [cameraActive]);
@@ -1460,7 +1467,7 @@ export default function LiveCakeExperience({
         }}
       />
 
-      {/* ── Studio Ambient Halo (Active when camera is off) ── */}
+      {/* ── Festive Celebration Studio Background (Active when camera is off) ── */}
       {!cameraActive && (
         <div
           style={{
@@ -1468,10 +1475,144 @@ export default function LiveCakeExperience({
             inset: 0,
             zIndex: 1,
             pointerEvents: "none",
+            overflow: "hidden",
             background:
-              "radial-gradient(circle at 50% 45%, rgba(251, 113, 133, 0.16) 0%, rgba(254, 240, 138, 0.1) 40%, rgba(20, 5, 15, 0.85) 85%)",
+              "radial-gradient(circle at 50% 32%, rgba(159, 18, 57, 0.45) 0%, rgba(88, 5, 30, 0.65) 45%, rgba(15, 3, 10, 0.98) 100%)",
           }}
-        />
+        >
+          {/* Glowing Golden Fairy Lights Garland draped across the top */}
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              height: "70px",
+              pointerEvents: "none",
+            }}
+          >
+            {/* Curved wire line */}
+            <svg
+              width="100%"
+              height="70"
+              viewBox="0 0 1000 70"
+              preserveAspectRatio="none"
+              style={{ position: "absolute", top: 0, left: 0, opacity: 0.4 }}
+            >
+              <path
+                d="M0,8 Q250,55 500,20 T1000,12"
+                fill="none"
+                stroke="#ffd700"
+                strokeWidth="1.5"
+                strokeDasharray="4 3"
+              />
+            </svg>
+
+            {/* Individual Glowing Fairy Light Bulbs */}
+            {[
+              { left: "5%", top: "14px", delay: "0s" },
+              { left: "12%", top: "28px", delay: "0.4s" },
+              { left: "20%", top: "38px", delay: "0.9s" },
+              { left: "28%", top: "42px", delay: "1.3s" },
+              { left: "37%", top: "35px", delay: "0.2s" },
+              { left: "46%", top: "24px", delay: "1.6s" },
+              { left: "55%", top: "18px", delay: "0.7s" },
+              { left: "64%", top: "26px", delay: "1.1s" },
+              { left: "73%", top: "36px", delay: "0.5s" },
+              { left: "82%", top: "32px", delay: "1.8s" },
+              { left: "90%", top: "20px", delay: "0.3s" },
+              { left: "96%", top: "12px", delay: "1.4s" },
+            ].map((bulb, idx) => (
+              <div
+                key={`fairy-${idx}`}
+                style={{
+                  position: "absolute",
+                  left: bulb.left,
+                  top: bulb.top,
+                  width: "10px",
+                  height: "10px",
+                  borderRadius: "50%",
+                  background: "radial-gradient(circle, #ffffff 10%, #ffd700 60%, #ffb703 100%)",
+                  boxShadow: "0 0 10px #ffd700, 0 0 20px rgba(251, 191, 36, 0.8)",
+                  animation: `fairyPulse 2.4s ease-in-out infinite`,
+                  animationDelay: bulb.delay,
+                  transform: "translate(-50%, -50%)",
+                }}
+              />
+            ))}
+          </div>
+
+          {/* Dreamy Celebration Bokeh Orbs */}
+          {[
+            { left: "10%", top: "22%", size: 90, color: "rgba(255, 215, 0, 0.22)", delay: "0s" },
+            { left: "82%", top: "25%", size: 110, color: "rgba(251, 113, 133, 0.20)", delay: "1.2s" },
+            { left: "22%", top: "42%", size: 70, color: "rgba(254, 240, 138, 0.18)", delay: "0.6s" },
+            { left: "72%", top: "45%", size: 85, color: "rgba(255, 183, 3, 0.16)", delay: "1.8s" },
+            { left: "48%", top: "18%", size: 60, color: "rgba(255, 255, 255, 0.25)", delay: "2.1s" },
+            { left: "6%", top: "54%", size: 95, color: "rgba(225, 29, 72, 0.16)", delay: "2.7s" },
+            { left: "88%", top: "52%", size: 90, color: "rgba(255, 215, 0, 0.18)", delay: "0.9s" },
+          ].map((b, idx) => (
+            <div
+              key={`bokeh-${idx}`}
+              style={{
+                position: "absolute",
+                left: b.left,
+                top: b.top,
+                width: `${b.size}px`,
+                height: `${b.size}px`,
+                borderRadius: "50%",
+                background: b.color,
+                filter: "blur(22px)",
+                animation: `bokehFloat 4.2s ease-in-out infinite`,
+                animationDelay: b.delay,
+                pointerEvents: "none",
+              }}
+            />
+          ))}
+
+          {/* Natural Celebration Banquet Tabletop Surface (Grounding the Cake at the Bottom) */}
+          <div
+            style={{
+              position: "absolute",
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: "36%",
+              background:
+                "linear-gradient(180deg, rgba(38, 12, 26, 0.96) 0%, rgba(16, 4, 11, 0.98) 100%)",
+              borderTop: "1.5px solid rgba(255, 215, 0, 0.38)",
+              boxShadow: "inset 0 1px 14px rgba(255, 215, 0, 0.16), 0 -12px 35px rgba(0, 0, 0, 0.75)",
+              pointerEvents: "none",
+            }}
+          >
+            {/* Warm Candlelight Reflection on Tabletop */}
+            <div
+              style={{
+                position: "absolute",
+                top: 0,
+                left: "50%",
+                transform: "translateX(-50%)",
+                width: "420px",
+                maxWidth: "95%",
+                height: "100%",
+                background:
+                  "radial-gradient(ellipse at 50% 0%, rgba(255, 215, 0, 0.28) 0%, rgba(244, 63, 94, 0.14) 42%, transparent 75%)",
+              }}
+            />
+            {/* Subtle Gold Table Runner Edge */}
+            <div
+              style={{
+                position: "absolute",
+                top: "8px",
+                left: "8%",
+                right: "8%",
+                height: "1px",
+                background:
+                  "linear-gradient(90deg, transparent 0%, rgba(255, 215, 0, 0.32) 50%, transparent 100%)",
+              }}
+            />
+          </div>
+        </div>
       )}
 
       {/* ── Clean Top Guidance Pill & Live Recording Badge ── */}
@@ -1740,7 +1881,7 @@ export default function LiveCakeExperience({
           <button
             type="button"
             onClick={() => {
-              setCakeTransform({ x: 0, y: -1.55, z: 0, scale: 0.88, rotationY: 0 });
+              setCakeTransform({ x: 0, y: cameraActive ? -1.55 : -1.05, z: 0, scale: cameraActive ? 0.88 : 0.94, rotationY: 0 });
               showToast("↺ Cake reset to optimal tabletop position! ✨", 2000);
             }}
             title="Reset to tabletop"

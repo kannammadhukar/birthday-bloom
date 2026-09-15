@@ -792,9 +792,9 @@ function CakeR3FScene({
 }) {
   const currentTransform: CakeTransform = cakeTransform ?? {
     x: 0,
-    y: isARMode ? -1.55 : 0,
+    y: isARMode ? -1.55 : -1.05,
     z: 0,
-    scale: isARMode ? 0.88 : 1.0,
+    scale: isARMode ? 0.88 : 0.94,
     rotationY: 0,
   };
 
