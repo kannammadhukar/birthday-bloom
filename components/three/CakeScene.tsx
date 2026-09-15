@@ -730,6 +730,40 @@ function BirthdayCake({
   );
 }
 
+export interface CakeTransform {
+  x: number;
+  y: number;
+  z: number;
+  scale: number;
+  rotationY: number;
+}
+
+/* ── Ground Plane Hit-Tester for AR Tap-to-Place ────────────── */
+function GroundHitPlane({
+  isARMode,
+  onHit,
+}: {
+  isARMode: boolean;
+  onHit?: (point: THREE.Vector3) => void;
+}) {
+  if (!isARMode || !onHit) return null;
+  return (
+    <mesh
+      position={[0, -2.1, 0]}
+      rotation={[-Math.PI / 2, 0, 0]}
+      visible={false}
+      onPointerDown={(e) => {
+        // Prevent event bubbling if dragging
+        e.stopPropagation();
+        onHit(e.point);
+      }}
+    >
+      <planeGeometry args={[100, 100]} />
+      <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+    </mesh>
+  );
+}
+
 /* ── Full R3F Scene ─────────────────────────────────────────── */
 function CakeR3FScene({
   blown,
@@ -740,6 +774,9 @@ function CakeR3FScene({
   shadowTexture,
   plaqueTexture,
   autoRotate = true,
+  isARMode = false,
+  cakeTransform,
+  onPlaneHit,
 }: {
   blown: boolean;
   sliced?: boolean;
@@ -749,7 +786,18 @@ function CakeR3FScene({
   shadowTexture: THREE.Texture;
   plaqueTexture: THREE.CanvasTexture | null;
   autoRotate?: boolean;
+  isARMode?: boolean;
+  cakeTransform?: CakeTransform;
+  onPlaneHit?: (point: THREE.Vector3) => void;
 }) {
+  const currentTransform: CakeTransform = cakeTransform ?? {
+    x: 0,
+    y: isARMode ? -1.55 : 0,
+    z: 0,
+    scale: isARMode ? 0.88 : 1.0,
+    rotationY: 0,
+  };
+
   return (
     <>
       <ambientLight intensity={0.9} />
@@ -757,25 +805,63 @@ function CakeR3FScene({
       <directionalLight position={[-6, 6, -5]} intensity={0.55} color="#e5c158" />
       <pointLight position={[0, 5.5, 3]} intensity={1.2} color="#fff6e8" />
 
+      {/* Tap-to-place ground hit plane in AR mode */}
+      <GroundHitPlane isARMode={isARMode} onHit={onPlaneHit} />
+
       <Float speed={0} floatIntensity={0}>
-        <BirthdayCake
-          blown={blown}
-          sliced={sliced}
-          cutting={cutting}
-          showConfetti={showConfetti}
-          onConfettiDone={onConfettiDone}
-          shadowTexture={shadowTexture}
-          plaqueTexture={plaqueTexture}
-        />
+        {/* Dynamic User-Controlled / Tabletop Anchor Group */}
+        <group
+          position={[currentTransform.x, currentTransform.y, currentTransform.z]}
+          scale={currentTransform.scale}
+          rotation={[0, currentTransform.rotationY, 0]}
+        >
+          <BirthdayCake
+            blown={blown}
+            sliced={sliced}
+            cutting={cutting}
+            showConfetti={showConfetti}
+            onConfettiDone={onConfettiDone}
+            shadowTexture={shadowTexture}
+            plaqueTexture={plaqueTexture}
+          />
+
+          {/* AR Tabletop Surface Reticle (Ground-plane indicator when in AR Camera mode) */}
+          {isARMode && (
+            <group position={[0, -0.63, 0]}>
+              {/* Outer glowing gold reticle ring */}
+              <mesh rotation={[-Math.PI / 2, 0, 0]}>
+                <ringGeometry args={[3.38, 3.48, 64]} />
+                <meshBasicMaterial color="#ffd166" transparent opacity={0.65} side={THREE.DoubleSide} />
+              </mesh>
+              {/* Secondary delicate starlight accent ring */}
+              <mesh rotation={[-Math.PI / 2, 0, 0]}>
+                <ringGeometry args={[3.72, 3.76, 48]} />
+                <meshBasicMaterial color="#d4af37" transparent opacity={0.35} side={THREE.DoubleSide} />
+              </mesh>
+              {/* 4 Cardinal Surface Markers */}
+              {[0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2].map((angle, idx) => (
+                <mesh
+                  key={idx}
+                  position={[Math.cos(angle) * 3.6, 0.01, Math.sin(angle) * 3.6]}
+                  rotation={[-Math.PI / 2, 0, angle]}
+                >
+                  <planeGeometry args={[0.32, 0.05]} />
+                  <meshBasicMaterial color="#ffd700" transparent opacity={0.7} side={THREE.DoubleSide} />
+                </mesh>
+              ))}
+            </group>
+          )}
+        </group>
       </Float>
 
-      {/* Orbit controls with camera focused on the true visual center */}
+      {/* Orbit controls with camera focused on visual center (active only in studio view) */}
       <OrbitControls
+        enabled={!isARMode}
         enablePan={false}
         enableZoom={false}
-        autoRotate={autoRotate && !blown && !sliced}
+        autoRotate={autoRotate && !blown && !sliced && !isARMode}
         autoRotateSpeed={1.0}
-        target={[0, 0.26, 0]}
+        target={[0, isARMode ? -0.8 : 0.26, 0]}
         minPolarAngle={Math.PI / 4.2}
         maxPolarAngle={Math.PI / 2.08}
       />
@@ -799,6 +885,9 @@ export default function CakeScene({
   confettiTrigger = 0,
   autoRotate = true,
   onToggleBlow,
+  isARMode = false,
+  cakeTransform,
+  onPlaneHit,
 }: {
   blown: boolean;
   sliced?: boolean;
@@ -806,6 +895,9 @@ export default function CakeScene({
   confettiTrigger?: number;
   autoRotate?: boolean;
   onToggleBlow?: () => void;
+  isARMode?: boolean;
+  cakeTransform?: CakeTransform;
+  onPlaneHit?: (point: THREE.Vector3) => void;
 }) {
   const [showConfetti, setShowConfetti] = useState(false);
   const [hasWebGL, setHasWebGL] = useState(true);
@@ -881,6 +973,9 @@ export default function CakeScene({
         shadowTexture={shadowTexture}
         plaqueTexture={plaqueTexture}
         autoRotate={autoRotate}
+        isARMode={isARMode}
+        cakeTransform={cakeTransform}
+        onPlaneHit={onPlaneHit}
       />
     </Canvas>
   );

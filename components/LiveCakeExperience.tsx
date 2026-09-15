@@ -16,7 +16,7 @@ if (typeof window !== "undefined") {
   };
 }
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import CakeScene from "./three/CakeScene";
+import CakeScene, { CakeTransform } from "./three/CakeScene";
 import confetti from "canvas-confetti";
 import { smoothAlign } from "@/lib/autoAlign";
 
@@ -63,6 +63,32 @@ export default function LiveCakeExperience({
 
   // ── Rotation Control ──
   const [autoRotate, setAutoRotate] = useState(true);
+
+  // ── 3D Cake Placement & AR Transformation States (Freedom of Movement) ──
+  // By default, y is -1.55 (significantly lowered onto the table, completely clear of the user's face!)
+  const [cakeTransform, setCakeTransform] = useState<CakeTransform>({
+    x: 0,
+    y: -1.55,
+    z: 0,
+    scale: 0.88,
+    rotationY: 0,
+  });
+  const [placementPing, setPlacementPing] = useState<{ x: number; y: number } | null>(null);
+  const cakeTransformRef = useRef(cakeTransform);
+  useEffect(() => {
+    cakeTransformRef.current = cakeTransform;
+  }, [cakeTransform]);
+
+  // Adjust default Y placement when toggling between Studio View (centered) and AR Camera (tabletop)
+  useEffect(() => {
+    if (cameraActive) {
+      setCakeTransform((prev) => ({
+        ...prev,
+        y: prev.y > -0.8 ? -1.55 : prev.y,
+        scale: prev.scale > 1.2 ? 0.88 : prev.scale,
+      }));
+    }
+  }, [cameraActive]);
 
 
   // ── Refs for Synchronous Loop Access ──
@@ -147,6 +173,216 @@ export default function LiveCakeExperience({
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), durationMs);
   }
+
+  // ── Touch & Pointer Gesture Engine for 3D Cake Canvas ──
+  // Enables: 1-finger drag (X/Y position), 2-finger pinch (scale), 2-finger twist (rotate), tap-to-place (hit-test)
+  const touchStateRef = useRef<{
+    startX: number;
+    startY: number;
+    initialX: number;
+    initialY: number;
+    initialDist: number;
+    initialScale: number;
+    initialAngle: number;
+    initialRotY: number;
+    isMultiTouch: boolean;
+    startTime: number;
+  }>({
+    startX: 0,
+    startY: 0,
+    initialX: 0,
+    initialY: 0,
+    initialDist: 0,
+    initialScale: 0.88,
+    initialAngle: 0,
+    initialRotY: 0,
+    isMultiTouch: false,
+    startTime: 0,
+  });
+  const isMouseDownRef = useRef(false);
+
+  // Screen Tap-to-Place logic (Raycasts screen tap to horizontal table plane)
+  const handleScreenTapToPlace = (clientX: number, clientY: number) => {
+    const container = containerRef.current;
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    const relX = clientX - rect.left;
+    const relY = clientY - rect.top;
+
+    // Show golden placement ping
+    setPlacementPing({ x: relX, y: relY });
+    setTimeout(() => setPlacementPing(null), 900);
+
+    // Convert screen coordinates to world coordinates on the tabletop plane
+    const targetX = ((relX / (rect.width || 400)) - 0.5) * 6.2;
+    const targetY = -((relY / (rect.height || 600)) - 0.5) * 5.8;
+
+    const clampedX = Math.max(-3.4, Math.min(3.4, targetX));
+    const clampedY = Math.max(-3.0, Math.min(0.6, targetY));
+
+    setCakeTransform((prev) => ({
+      ...prev,
+      x: clampedX,
+      y: clampedY,
+    }));
+
+    showToast("📍 Cake anchored to table surface! ✨", 2200);
+  };
+
+  const handleCanvasTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    const touches = e.touches;
+    const now = performance.now();
+
+    if (touches.length === 1) {
+      touchStateRef.current = {
+        startX: touches[0].clientX,
+        startY: touches[0].clientY,
+        initialX: cakeTransformRef.current.x,
+        initialY: cakeTransformRef.current.y,
+        initialDist: 0,
+        initialScale: cakeTransformRef.current.scale,
+        initialAngle: 0,
+        initialRotY: cakeTransformRef.current.rotationY,
+        isMultiTouch: false,
+        startTime: now,
+      };
+    } else if (touches.length >= 2) {
+      const dx = touches[1].clientX - touches[0].clientX;
+      const dy = touches[1].clientY - touches[0].clientY;
+      const dist = Math.hypot(dx, dy);
+      const angle = Math.atan2(dy, dx);
+
+      touchStateRef.current = {
+        startX: (touches[0].clientX + touches[1].clientX) / 2,
+        startY: (touches[0].clientY + touches[1].clientY) / 2,
+        initialX: cakeTransformRef.current.x,
+        initialY: cakeTransformRef.current.y,
+        initialDist: dist,
+        initialScale: cakeTransformRef.current.scale,
+        initialAngle: angle,
+        initialRotY: cakeTransformRef.current.rotationY,
+        isMultiTouch: true,
+        startTime: now,
+      };
+    }
+  };
+
+  const handleCanvasTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    const touches = e.touches;
+    const container = containerRef.current;
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    const w = rect.width || 400;
+    const h = rect.height || 600;
+
+    if (touches.length === 1 && !touchStateRef.current.isMultiTouch) {
+      const dx = touches[0].clientX - touchStateRef.current.startX;
+      const dy = touches[0].clientY - touchStateRef.current.startY;
+
+      // Convert pixel delta to Three.js world units
+      const worldDx = (dx / w) * 6.5;
+      const worldDy = -(dy / h) * 6.5;
+
+      const newX = Math.max(-3.5, Math.min(3.5, touchStateRef.current.initialX + worldDx));
+      const newY = Math.max(-3.2, Math.min(1.2, touchStateRef.current.initialY + worldDy));
+
+      setCakeTransform((prev) => ({
+        ...prev,
+        x: newX,
+        y: newY,
+      }));
+    } else if (touches.length >= 2) {
+      const dx = touches[1].clientX - touches[0].clientX;
+      const dy = touches[1].clientY - touches[0].clientY;
+      const currentDist = Math.hypot(dx, dy);
+      const currentAngle = Math.atan2(dy, dx);
+
+      if (touchStateRef.current.initialDist > 0) {
+        const pinchRatio = currentDist / touchStateRef.current.initialDist;
+        const newScale = Math.max(0.35, Math.min(2.2, touchStateRef.current.initialScale * pinchRatio));
+
+        const deltaAngle = currentAngle - touchStateRef.current.initialAngle;
+        const newRotY = touchStateRef.current.initialRotY - deltaAngle;
+
+        setCakeTransform((prev) => ({
+          ...prev,
+          scale: newScale,
+          rotationY: newRotY,
+        }));
+      }
+    }
+  };
+
+  const handleCanvasTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
+    const elapsed = performance.now() - touchStateRef.current.startTime;
+    if (elapsed < 240 && !touchStateRef.current.isMultiTouch && e.changedTouches.length === 1) {
+      const touch = e.changedTouches[0];
+      const dist = Math.hypot(
+        touch.clientX - touchStateRef.current.startX,
+        touch.clientY - touchStateRef.current.startY
+      );
+      if (dist < 12) {
+        handleScreenTapToPlace(touch.clientX, touch.clientY);
+      }
+    }
+  };
+
+  const handleCanvasMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return;
+    isMouseDownRef.current = true;
+    touchStateRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      initialX: cakeTransformRef.current.x,
+      initialY: cakeTransformRef.current.y,
+      initialDist: 0,
+      initialScale: cakeTransformRef.current.scale,
+      initialAngle: 0,
+      initialRotY: cakeTransformRef.current.rotationY,
+      isMultiTouch: false,
+      startTime: performance.now(),
+    };
+  };
+
+  const handleCanvasMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isMouseDownRef.current) return;
+    const container = containerRef.current;
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    const w = rect.width || 400;
+    const h = rect.height || 600;
+
+    const dx = e.clientX - touchStateRef.current.startX;
+    const dy = e.clientY - touchStateRef.current.startY;
+
+    const worldDx = (dx / w) * 6.5;
+    const worldDy = -(dy / h) * 6.5;
+
+    setCakeTransform((prev) => ({
+      ...prev,
+      x: Math.max(-3.5, Math.min(3.5, touchStateRef.current.initialX + worldDx)),
+      y: Math.max(-3.2, Math.min(1.2, touchStateRef.current.initialY + worldDy)),
+    }));
+  };
+
+  const handleCanvasMouseUp = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isMouseDownRef.current) return;
+    isMouseDownRef.current = false;
+    const elapsed = performance.now() - touchStateRef.current.startTime;
+    const dist = Math.hypot(e.clientX - touchStateRef.current.startX, e.clientY - touchStateRef.current.startY);
+    if (elapsed < 240 && dist < 8) {
+      handleScreenTapToPlace(e.clientX, e.clientY);
+    }
+  };
+
+  const handleCanvasWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    if (!cameraActive) return;
+    const zoomFactor = e.deltaY < 0 ? 1.08 : 0.92;
+    setCakeTransform((prev) => ({
+      ...prev,
+      scale: Math.max(0.35, Math.min(2.2, prev.scale * zoomFactor)),
+    }));
+  };
 
   // ── Sound Synthesizers ──
   function playKnifeSliceSound() {
@@ -295,23 +531,24 @@ export default function LiveCakeExperience({
       if (webglCanvas && webglCanvas.width > 0 && webglCanvas.height > 0) {
         const cW = webglCanvas.width;
         const cH = webglCanvas.height;
-        const cakeAspect = cW / cH;
-
-        // The cake rests anchored at the bottom of the frame (~46% height) leaving the face clear
-        const targetCakeH = Math.round(720 * 0.46);
-        let drawW = Math.round(targetCakeH * cakeAspect);
-        let drawH = targetCakeH;
-
-        if (drawW > 1280) {
-          drawW = 1280;
-          drawH = Math.round(1280 / cakeAspect);
-        }
-
-        const drawX = Math.round((1280 - drawW) / 2);
-        const drawY = 720 - drawH - 24;
 
         try {
-          ctx.drawImage(webglCanvas, 0, 0, cW, cH, drawX, drawY, drawW, drawH);
+          // When camera is active, draw 1:1 so the cake matches the user's on-screen placed position & scale
+          if (streamRef.current && streamRef.current.active) {
+            ctx.drawImage(webglCanvas, 0, 0, cW, cH, 0, 0, 1280, 720);
+          } else {
+            const cakeAspect = cW / cH;
+            const targetCakeH = Math.round(720 * 0.72);
+            let drawW = Math.round(targetCakeH * cakeAspect);
+            let drawH = targetCakeH;
+            if (drawW > 1280) {
+              drawW = 1280;
+              drawH = Math.round(1280 / cakeAspect);
+            }
+            const drawX = Math.round((1280 - drawW) / 2);
+            const drawY = Math.round((720 - drawH) / 2);
+            ctx.drawImage(webglCanvas, 0, 0, cW, cH, drawX, drawY, drawW, drawH);
+          }
         } catch (err) {
           console.warn("Could not draw cake to composite canvas:", err);
         }
@@ -537,18 +774,23 @@ export default function LiveCakeExperience({
       if (webglCanvas && webglCanvas.width > 0 && webglCanvas.height > 0) {
         const cW = webglCanvas.width;
         const cH = webglCanvas.height;
-        const cakeAspect = cW / cH;
-        const targetH = Math.round(photoH * 0.46);
-        let drawW = Math.round(targetH * cakeAspect);
-        let drawH = targetH;
-        if (drawW > photoW) {
-          drawW = photoW;
-          drawH = Math.round(photoW / cakeAspect);
-        }
-        const drawX = photoX + Math.round((photoW - drawW) / 2);
-        const drawY = photoY + (photoH - drawH - 14);
         try {
-          ctx.drawImage(webglCanvas, 0, 0, cW, cH, drawX, drawY, drawW, drawH);
+          if (streamRef.current && streamRef.current.active) {
+            // Drawn 1:1 across photo area so the cake is at the exact position & scale the user placed it
+            ctx.drawImage(webglCanvas, 0, 0, cW, cH, photoX, photoY, photoW, photoH);
+          } else {
+            const cakeAspect = cW / cH;
+            const targetH = Math.round(photoH * 0.72);
+            let drawW = Math.round(targetH * cakeAspect);
+            let drawH = targetH;
+            if (drawW > photoW) {
+              drawW = photoW;
+              drawH = Math.round(photoW / cakeAspect);
+            }
+            const drawX = photoX + Math.round((photoW - drawW) / 2);
+            const drawY = photoY + Math.round((photoH - drawH) / 2);
+            ctx.drawImage(webglCanvas, 0, 0, cW, cH, drawX, drawY, drawW, drawH);
+          }
         } catch (err) {
           console.warn("Could not draw cake to snapshot canvas:", err);
         }
@@ -1313,20 +1555,27 @@ export default function LiveCakeExperience({
         </div>
       </div>
 
-      {/* ── 3D Three.js Cake Canvas (Cake in Front of Person) ── */}
+      {/* ── 3D Three.js Cake Canvas (Full Viewport Freedom of Placement) ── */}
       <div
         id="cake-three-canvas-container"
+        onTouchStart={handleCanvasTouchStart}
+        onTouchMove={handleCanvasTouchMove}
+        onTouchEnd={handleCanvasTouchEnd}
+        onMouseDown={handleCanvasMouseDown}
+        onMouseMove={handleCanvasMouseMove}
+        onMouseUp={handleCanvasMouseUp}
+        onWheel={handleCanvasWheel}
         style={{
           width: "100%",
+          height: "100%",
           flex: 1,
           minHeight: 0,
-          height: cameraActive ? "clamp(240px, 40vh, 380px)" : "clamp(250px, 44vh, 440px)",
-          position: cameraActive ? "absolute" : "relative",
-          bottom: cameraActive ? "52px" : "auto",
-          left: 0,
-          right: 0,
+          position: "absolute",
+          inset: 0,
           zIndex: 5,
           pointerEvents: "auto",
+          touchAction: "none",
+          cursor: cameraActive ? "grab" : "default",
         }}
       >
         <CakeScene
@@ -1335,46 +1584,256 @@ export default function LiveCakeExperience({
           cutting={cutting}
           confettiTrigger={confettiTrigger}
           autoRotate={autoRotate && !cameraActive}
+          isARMode={cameraActive}
+          cakeTransform={cakeTransform}
+          onPlaneHit={(point) => {
+            setCakeTransform((prev) => ({
+              ...prev,
+              x: Math.max(-3.5, Math.min(3.5, point.x)),
+              z: Math.max(-3.5, Math.min(3.5, point.z)),
+            }));
+            showToast("📍 Cake anchored to surface! ✨", 1800);
+          }}
           onToggleBlow={() => {
             triggerBlowSuccess("💨 You tapped the cake! Candles blown out! 🎉✨");
           }}
         />
       </div>
 
+      {/* ── Golden Placement Ping Effect ── */}
+      {placementPing && (
+        <div
+          style={{
+            position: "absolute",
+            left: `${placementPing.x}px`,
+            top: `${placementPing.y}px`,
+            transform: "translate(-50%, -50%)",
+            pointerEvents: "none",
+            zIndex: 18,
+            animation: "pingPulse 0.8s ease-out forwards",
+          }}
+        >
+          <div
+            style={{
+              width: "72px",
+              height: "72px",
+              borderRadius: "50%",
+              border: "2.5px solid #ffd700",
+              boxShadow: "0 0 26px #ffd700, inset 0 0 16px #ffd700",
+            }}
+          />
+        </div>
+      )}
+
+      {/* ── AR Transformation Floating Toolbar (Lower, Raise, Scale, Rotate, Reset) ── */}
+      {cameraActive && (
+        <div
+          style={{
+            position: "absolute",
+            right: "12px",
+            top: "46%",
+            transform: "translateY(-50%)",
+            zIndex: 25,
+            display: "flex",
+            flexDirection: "column",
+            gap: "6px",
+            alignItems: "center",
+            background: "rgba(18, 5, 14, 0.88)",
+            backdropFilter: "blur(16px)",
+            WebkitBackdropFilter: "blur(16px)",
+            border: "1.5px solid rgba(255, 209, 102, 0.5)",
+            borderRadius: "26px",
+            padding: "8px 6px",
+            boxShadow: "0 8px 24px rgba(0,0,0,0.65), 0 0 14px rgba(212, 175, 55, 0.25)",
+            pointerEvents: "auto",
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => setCakeTransform((t) => ({ ...t, y: Math.max(t.y - 0.28, -3.2) }))}
+            title="Lower cake down onto table"
+            style={{
+              background: "rgba(255, 209, 102, 0.16)",
+              border: "1px solid rgba(255, 209, 102, 0.5)",
+              color: "#ffd166",
+              borderRadius: "16px",
+              padding: "6px 8px",
+              fontSize: "0.82rem",
+              fontWeight: 800,
+              cursor: "pointer",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: "2px",
+            }}
+          >
+            <span>⬇️</span>
+            <span style={{ fontSize: "0.62rem", letterSpacing: "0.5px" }}>Lower</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setCakeTransform((t) => ({ ...t, y: Math.min(t.y + 0.28, 1.2) }))}
+            title="Raise cake higher"
+            style={{
+              background: "rgba(255, 209, 102, 0.16)",
+              border: "1px solid rgba(255, 209, 102, 0.5)",
+              color: "#ffd166",
+              borderRadius: "16px",
+              padding: "6px 8px",
+              fontSize: "0.82rem",
+              fontWeight: 800,
+              cursor: "pointer",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: "2px",
+            }}
+          >
+            <span>⬆️</span>
+            <span style={{ fontSize: "0.62rem", letterSpacing: "0.5px" }}>Raise</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setCakeTransform((t) => ({ ...t, scale: Math.min(t.scale * 1.15, 2.2) }))}
+            title="Enlarge cake"
+            style={{
+              background: "rgba(255, 255, 255, 0.12)",
+              border: "1px solid rgba(255, 255, 255, 0.25)",
+              color: "#ffffff",
+              borderRadius: "16px",
+              padding: "6px 8px",
+              fontSize: "0.85rem",
+              fontWeight: 800,
+              cursor: "pointer",
+            }}
+          >
+            ➕
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setCakeTransform((t) => ({ ...t, scale: Math.max(t.scale * 0.86, 0.35) }))}
+            title="Shrink cake"
+            style={{
+              background: "rgba(255, 255, 255, 0.12)",
+              border: "1px solid rgba(255, 255, 255, 0.25)",
+              color: "#ffffff",
+              borderRadius: "16px",
+              padding: "6px 8px",
+              fontSize: "0.85rem",
+              fontWeight: 800,
+              cursor: "pointer",
+            }}
+          >
+            ➖
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setCakeTransform((t) => ({ ...t, rotationY: t.rotationY + Math.PI / 4 }))}
+            title="Rotate cake 45°"
+            style={{
+              background: "rgba(255, 255, 255, 0.12)",
+              border: "1px solid rgba(255, 255, 255, 0.25)",
+              color: "#ffffff",
+              borderRadius: "16px",
+              padding: "6px 8px",
+              fontSize: "0.82rem",
+              fontWeight: 700,
+              cursor: "pointer",
+            }}
+          >
+            🔄
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setCakeTransform({ x: 0, y: -1.55, z: 0, scale: 0.88, rotationY: 0 });
+              showToast("↺ Cake reset to optimal tabletop position! ✨", 2000);
+            }}
+            title="Reset to tabletop"
+            style={{
+              background: "rgba(212, 175, 55, 0.22)",
+              border: "1px solid rgba(212, 175, 55, 0.65)",
+              color: "#fde047",
+              borderRadius: "16px",
+              padding: "6px 7px",
+              fontSize: "0.66rem",
+              fontWeight: 800,
+              cursor: "pointer",
+            }}
+          >
+            ↺
+          </button>
+        </div>
+      )}
+
       {/* ── AR Tabletop Pedestal Shadow (when camera active) ── */}
       {cameraActive && (
         <div
           style={{
             position: "absolute",
-            bottom: "48px",
-            left: "50%",
+            bottom: "28px",
+            left: `calc(50% + ${cakeTransform.x * 28}px)`,
             transform: "translateX(-50%)",
-            width: "360px",
+            width: `${Math.round(360 * cakeTransform.scale)}px`,
             maxWidth: "85%",
             height: "40px",
             background: "radial-gradient(ellipse at center, rgba(0,0,0,0.65) 0%, rgba(212,175,55,0.12) 40%, transparent 75%)",
             borderRadius: "50%",
             pointerEvents: "none",
             zIndex: 4,
+            transition: "left 0.1s ease, width 0.1s ease",
           }}
         />
       )}
 
-      {/* ── Clean, Simple Control Dock ── */}
+      {/* ── Clean, Simple Control Dock (Anchored at Bottom) ── */}
       <div
         style={{
           width: "100%",
+          position: "absolute",
+          bottom: "10px",
+          left: 0,
+          right: 0,
           zIndex: 20,
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          gap: "8px",
-          padding: "6px 12px 14px",
+          gap: "6px",
+          padding: "4px 12px 6px",
+          pointerEvents: "none",
         }}
       >
+        {/* AR Gesture Hint Badge */}
+        {cameraActive && (
+          <div
+            style={{
+              background: "rgba(18, 5, 12, 0.85)",
+              backdropFilter: "blur(12px)",
+              WebkitBackdropFilter: "blur(12px)",
+              border: "1px solid rgba(255, 209, 102, 0.4)",
+              borderRadius: "20px",
+              padding: "4px 14px",
+              color: "#fef08a",
+              fontSize: "clamp(0.68rem, 1.3vw, 0.78rem)",
+              fontWeight: 700,
+              letterSpacing: "0.2px",
+              boxShadow: "0 4px 14px rgba(0,0,0,0.5)",
+              pointerEvents: "none",
+              whiteSpace: "nowrap",
+            }}
+          >
+            👆 Drag cake to move · 🤏 Pinch to resize · 🔄 Twist to spin · Tap to place
+          </div>
+        )}
         <div
           className="cake-controls-dock-responsive"
           style={{
+            pointerEvents: "auto",
             display: "flex",
             flexWrap: "wrap",
             alignItems: "center",

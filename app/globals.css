@@ -1119,7 +1119,7 @@ input[type="range"]::-moz-range-track {
   }
   #cake-three-canvas-container {
     height: 100% !important;
-    max-height: calc(100% - 66px) !important;
+    width: 100% !important;
     flex: 1 !important;
     min-height: 0 !important;
   }
