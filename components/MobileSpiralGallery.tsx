@@ -521,6 +521,8 @@ export default function MobileSpiralGallery({ onSelectPhoto }: MobileSpiralGalle
                   <img
                     src={item.photo.src}
                     alt={item.title}
+                    width={180}
+                    height={180}
                     style={{
                       width: "100%",
                       height: "100%",
@@ -528,6 +530,7 @@ export default function MobileSpiralGallery({ onSelectPhoto }: MobileSpiralGalle
                       display: "block",
                     }}
                     loading="lazy"
+                    decoding="async"
                   />
                   {/* Subtle gloss sheen */}
                   <div

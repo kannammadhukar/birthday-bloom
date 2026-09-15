@@ -1152,6 +1152,9 @@ export default function MemoryReel() {
                     src={card.photo.src}
                     alt={card.photo.caption}
                     loading="lazy"
+                    decoding="async"
+                    width={180}
+                    height={240}
                     draggable={false}
                     style={{
                       width: "100%",

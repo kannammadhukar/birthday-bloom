@@ -11,52 +11,59 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
-      // ── 1. HTML pages — always fresh (no CDN cache) ───────────────────────
+      // ── Permissions Policy for Camera & Audio ─────────────────────────────
       {
-        source: "/((?!_next/static|_next/image|images|audio|models|videos|wasm).*)",
+        source: "/:path*",
         headers: [
           {
             key: "Permissions-Policy",
             value: "camera=*, microphone=*, fullscreen=*",
-          },
-          {
-            // Only HTML pages are no-store so users always see the latest content
-            key: "Cache-Control",
-            value: "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
           },
         ],
       },
-      // ── 2. Next.js JS/CSS chunks — immutable (content-hashed filenames) ───
+      // ── Public Static Media — 1 Year Immutable Edge & Browser Cache ────────
       {
-        source: "/_next/static/(.*)",
+        source: "/images/:path*",
         headers: [
-          {
-            key: "Permissions-Policy",
-            value: "camera=*, microphone=*, fullscreen=*",
-          },
           {
             key: "Cache-Control",
             value: "public, max-age=31536000, immutable",
           },
         ],
       },
-      // ── 3. Public static assets — 7-day CDN cache ────────────────────────
       {
-        source: "/(images|audio|models|videos|wasm)/(.*)",
+        source: "/videos/:path*",
         headers: [
           {
             key: "Cache-Control",
-            value: "public, max-age=604800, stale-while-revalidate=86400",
+            value: "public, max-age=31536000, immutable",
           },
         ],
       },
-      // ── 4. Optimised images served by Next.js ────────────────────────────
       {
-        source: "/_next/image(.*)",
+        source: "/audio/:path*",
         headers: [
           {
             key: "Cache-Control",
-            value: "public, max-age=86400, stale-while-revalidate=3600",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+      {
+        source: "/models/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+      {
+        source: "/wasm/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
           },
         ],
       },

@@ -863,9 +863,10 @@ export default function Home() {
               <video
                 ref={tributeVideoRef}
                 src="/videos/divija_jugraafiya_exact.mp4"
+                poster="/videos/preview/test_frame.jpg"
                 controls
                 playsInline
-                preload="none"
+                preload="metadata"
                 style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
                 onPlay={() => {
                   smoothAlign("#tribute-video-section");
@@ -1500,9 +1501,11 @@ export default function Home() {
             <video
               id="theater-modal-video"
               src="/videos/divija_jugraafiya_exact.mp4"
+              poster="/videos/preview/test_frame.jpg"
               controls
               autoPlay
               playsInline
+              preload="metadata"
               style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
               onPlay={() => {
                 setIsVideoPlaying(true);
