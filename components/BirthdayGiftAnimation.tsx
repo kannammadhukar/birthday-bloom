@@ -140,6 +140,7 @@ export default function BirthdayGiftAnimation({
       {/* Music Toggle (Top Right) */}
       {onToggleMusic && (
         <button
+          type="button"
           className="audio-control-btn"
           onClick={onToggleMusic}
           aria-label={audioPlaying ? "Mute Music" : "Play Music"}
@@ -192,7 +193,7 @@ export default function BirthdayGiftAnimation({
 
           {/* "Click here" Envelope Button */}
           <div className="btn">
-            <button id="btn__letter" onClick={handleOpenLetter} aria-label="Open Birthday Letter">
+            <button type="button" id="btn__letter" onClick={handleOpenLetter} aria-label="Open Birthday Letter">
               <span>Click here</span>
               <span className="btn-envelope-icon">💌</span>
             </button>
@@ -322,8 +323,8 @@ export default function BirthdayGiftAnimation({
 
       {/* ── Bottom Action Bar: Proceed to Gala & Cut Cake ── */}
       <div className="gala-continue-bar">
-        <button className="gala-continue-btn" onClick={handleContinue}>
-          <span>Enter Birthday Gala & Cut the Cake</span>
+        <button type="button" className="gala-continue-btn" onClick={handleContinue}>
+          <span>Enter Birthday Gala &amp; Cut the Cake</span>
           <span className="cake-emoji">🎂👑 ➔</span>
         </button>
       </div>

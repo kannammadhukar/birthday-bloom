@@ -178,6 +178,7 @@ export default function BirthdayLetter() {
         {/* Quick Flip Back to Front Button (Top Right) */}
         {isFlipped && (
           <button
+            type="button"
             className="btn-floating-top-flip"
             onClick={handleFlip}
             style={{
@@ -344,6 +345,7 @@ export default function BirthdayLetter() {
               </span>
 
               <button
+                type="button"
                 className="btn-envelope-desktop-flip"
                 onClick={(e) => { e.stopPropagation(); handleFlip(); }}
                 style={{
@@ -482,6 +484,7 @@ export default function BirthdayLetter() {
 
             {/* Go Back to Front Side Button (Prominently placed at bottom-left, zIndex: 35) */}
             <button
+              type="button"
               className="btn-envelope-back-side-flip"
               onClick={(e) => { e.stopPropagation(); handleFlip(); }}
               style={{
@@ -741,6 +744,7 @@ export default function BirthdayLetter() {
                 borderTop: "1px dashed rgba(212,175,55,0.4)",
               }}>
                 <button
+                  type="button"
                   onClick={handleReseal}
                   style={{
                     background: "#5c111d", color: "#f3e5ab",
@@ -782,6 +786,7 @@ export default function BirthdayLetter() {
         maxWidth: 620,
       }}>
         <button
+          type="button"
           onClick={handleFlip}
           style={{
             background: "linear-gradient(135deg, #5c111d, #380811)",

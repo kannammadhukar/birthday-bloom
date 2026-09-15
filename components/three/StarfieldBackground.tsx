@@ -219,7 +219,7 @@ function LargeAmbientBokeh({ bokehTexture }: { bokehTexture: THREE.Texture }) {
 }
 
 /* ── Cinema Gala Ambient Scene ─────────────────────────────── */
-function GalaStardustScene({ bokehTexture }: { bokehTexture: THREE.Texture }) {
+function GalaStardustScene({ bokehTexture, isMobile }: { bokehTexture: THREE.Texture; isMobile?: boolean }) {
   return (
     <>
       {/* 1. Large dreamy ambient out-of-focus bokeh orbs */}
@@ -228,38 +228,38 @@ function GalaStardustScene({ bokehTexture }: { bokehTexture: THREE.Texture }) {
       {/* 2. Upward drifting effervescent champagne bubbles */}
       <ChampagneEffervescence bokehTexture={bokehTexture} />
 
-      {/* 3. Deep cosmic golden stardust */}
+      {/* 3. Deep cosmic golden stardust — reduced on mobile */}
       <SoftStardustLayer
-        count={550}
+        count={isMobile ? 200 : 550}
         radius={45}
-        size={1.6}
+        size={isMobile ? 2.0 : 1.6}
         color="#f3e5ab"
         opacity={0.65}
         bokehTexture={bokehTexture}
       />
 
-      {/* 4. Warm amber-gold midground embers */}
+      {/* 4. Warm amber-gold midground embers — reduced on mobile */}
       <SoftStardustLayer
-        count={280}
+        count={isMobile ? 100 : 280}
         radius={35}
-        size={2.4}
+        size={isMobile ? 2.8 : 2.4}
         color="#d4af37"
         opacity={0.55}
         bokehTexture={bokehTexture}
       />
 
-      {/* 5. Foreground radiant sparks */}
+      {/* 5. Foreground radiant sparks — reduced on mobile */}
       <SoftStardustLayer
-        count={80}
+        count={isMobile ? 30 : 80}
         radius={22}
-        size={3.6}
+        size={isMobile ? 4.0 : 3.6}
         color="#fef08a"
         opacity={0.7}
         bokehTexture={bokehTexture}
       />
 
-      {/* Camera subtle mouse parallax */}
-      <CameraParallax />
+      {/* Camera subtle mouse parallax — skip on touch devices */}
+      {!isMobile && <CameraParallax />}
     </>
   );
 }
@@ -267,6 +267,8 @@ function GalaStardustScene({ bokehTexture }: { bokehTexture: THREE.Texture }) {
 /* ── Main Export ───────────────────────────────────────────── */
 export default function StarfieldBackground() {
   const [mounted, setMounted] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
   const bokehTexture = useMemo(() => {
     if (typeof document === "undefined") return null;
     return createChampagneBokehTexture();
@@ -274,24 +276,34 @@ export default function StarfieldBackground() {
 
   useEffect(() => {
     setMounted(true);
+    // Detect mobile/touch to reduce GPU load
+    const mq = window.matchMedia("(hover: none) and (pointer: coarse)");
+    setIsMobile(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
   }, []);
 
   if (!mounted || !bokehTexture) return null;
 
+  // On mobile: limit pixel ratio to 1x (vs 2x retina) — saves ~50% GPU fill
+  const dprRange: [number, number] = isMobile ? [1, 1] : [1, 2];
+
   return (
     <div className="canvas-fixed-bg" style={{ zIndex: 0 }}>
       <Canvas
-        dpr={[1, 2]}
+        dpr={dprRange}
         camera={{ position: [0, 0, 15], fov: 60 }}
         style={{ width: "100%", height: "100%" }}
         gl={{
-          antialias: true,
+          antialias: !isMobile,
           powerPreference: "high-performance",
           alpha: true,
         }}
       >
-        <GalaStardustScene bokehTexture={bokehTexture} />
+        <GalaStardustScene bokehTexture={bokehTexture} isMobile={isMobile} />
       </Canvas>
     </div>
   );
 }
+

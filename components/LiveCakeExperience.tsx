@@ -1394,6 +1394,7 @@ export default function LiveCakeExperience({
             <>
               {/* 1. Live AR Camera Button */}
               <button
+                type="button"
                 onClick={() => {
                   if (cameraActive) {
                     stopCamera();
@@ -1477,6 +1478,7 @@ export default function LiveCakeExperience({
               {/* 2. Manual Snap AR Photo Button (when camera is on) */}
               {cameraActive && (
                 <button
+                  type="button"
                   onClick={() => {
                     autoCaptureCelebrationSnap();
                     showToast("📸 Commemorative AR Photo Captured! ✨");
@@ -1503,6 +1505,7 @@ export default function LiveCakeExperience({
 
               {/* 4. Direct Blow Button */}
               <button
+                type="button"
                 onClick={() => {
                   triggerBlowSuccess("💨 Candles blown out! Divija's wish is granted! 👑✨");
                 }}
@@ -1527,6 +1530,7 @@ export default function LiveCakeExperience({
               {/* Flip camera if live camera is on */}
               {cameraActive && (
                 <button
+                  type="button"
                   onClick={flipCamera}
                   title="Flip Camera"
                   style={{
@@ -1549,6 +1553,7 @@ export default function LiveCakeExperience({
               {/* 1. Cut the Cake Button */}
               {!sliced && (
                 <button
+                  type="button"
                   onClick={handleCutCake}
                   style={{
                     padding: "10px 22px",
@@ -1573,6 +1578,7 @@ export default function LiveCakeExperience({
               {/* 2. View Keepsake (Video & Photo) */}
               {(capturedVideoUrl || capturedPhotoUrl) && (
                 <button
+                  type="button"
                   onClick={() => setIsPhotoModalOpen(true)}
                   style={{
                     padding: "9px 16px",
@@ -1594,6 +1600,7 @@ export default function LiveCakeExperience({
 
               {/* 3. Relight Candles Option */}
               <button
+                type="button"
                 onClick={() => {
                   smoothAlign(containerRef.current);
                   hasTriggeredBlowRef.current = false;
@@ -1627,6 +1634,7 @@ export default function LiveCakeExperience({
 
           {/* Auto-spin Toggle */}
           <button
+            type="button"
             onClick={() => setAutoRotate((r) => !r)}
             title={autoRotate ? "Pause rotation" : "Auto rotate"}
             style={{

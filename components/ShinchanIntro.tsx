@@ -445,30 +445,59 @@ export default function ShinchanIntro({ onDone }: Props) {
             <span>✨</span>
           </div>
 
-          {/* Music Control Pill Button */}
-          <button
-            onClick={toggleMusic}
-            className="pavilion-music-btn"
-            style={{
-              background: "#1e050c",
-              border: "1px solid rgba(230, 202, 133, 0.4)",
-              borderRadius: "24px",
-              padding: "5px 13px",
-              fontSize: "clamp(0.70rem, 1.1vw, 0.80rem)",
-              fontWeight: 600,
-              color: "#e6ca85",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.4)",
-              transition: "all 0.2s ease",
-              whiteSpace: "nowrap"
-            }}
-          >
-            <span>{audioPlaying ? "🎵" : "🔇"}</span>
-            <span>{audioPlaying ? `Music: ${musicMoodTitle}` : "Music Muted"}</span>
-          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            {/* Music Control Pill Button */}
+            <button
+              type="button"
+              onClick={toggleMusic}
+              className="pavilion-music-btn"
+              style={{
+                background: "#1e050c",
+                border: "1px solid rgba(230, 202, 133, 0.4)",
+                borderRadius: "24px",
+                padding: "5px 13px",
+                fontSize: "clamp(0.70rem, 1.1vw, 0.80rem)",
+                fontWeight: 600,
+                color: "#e6ca85",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.4)",
+                transition: "all 0.2s ease",
+                whiteSpace: "nowrap"
+              }}
+            >
+              <span>{audioPlaying ? "🎵" : "🔇"}</span>
+              <span>{audioPlaying ? `Music: ${musicMoodTitle}` : "Music Muted"}</span>
+            </button>
+
+            {/* Skip to Gala Button */}
+            <button
+              type="button"
+              onClick={handleEnterCelebration}
+              className="pavilion-skip-btn"
+              style={{
+                background: "linear-gradient(135deg, rgba(212, 175, 55, 0.25) 0%, rgba(120, 18, 40, 0.35) 100%)",
+                border: "1.5px solid rgba(255, 215, 0, 0.55)",
+                borderRadius: "24px",
+                padding: "5px 12px",
+                fontSize: "clamp(0.68rem, 1.0vw, 0.76rem)",
+                fontWeight: 800,
+                color: "#ffd700",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "4px",
+                whiteSpace: "nowrap",
+                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.4)",
+                transition: "all 0.2s ease",
+              }}
+              title="Skip directly to the celebration gala"
+            >
+              <span>Skip to Gala ➔</span>
+            </button>
+          </div>
         </div>
 
         {/* ══════════════════════════════════════════════════════════════
@@ -644,6 +673,7 @@ export default function ShinchanIntro({ onDone }: Props) {
               }}
             >
               <button
+                type="button"
                 className="action-btn"
                 onClick={handleYes}
                 style={{
@@ -668,6 +698,7 @@ export default function ShinchanIntro({ onDone }: Props) {
               </button>
 
               <button
+                type="button"
                 className="action-btn"
                 onClick={handleNo}
                 style={{
@@ -862,6 +893,7 @@ export default function ShinchanIntro({ onDone }: Props) {
               }}
             >
               <button
+                type="button"
                 className="action-btn"
                 onClick={handleTryAgain}
                 style={{
@@ -1059,6 +1091,7 @@ export default function ShinchanIntro({ onDone }: Props) {
               }}
             >
               <button
+                type="button"
                 className="action-btn"
                 onClick={handleNext}
                 style={{
@@ -1083,6 +1116,7 @@ export default function ShinchanIntro({ onDone }: Props) {
               </button>
 
               <button
+                type="button"
                 className="action-btn"
                 onClick={handleNext}
                 style={{

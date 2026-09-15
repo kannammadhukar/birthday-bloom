@@ -355,6 +355,7 @@ export default function CameraSettingsModal({
             </div>
           </div>
           <button
+            type="button"
             onClick={() => {
               stopTestStream();
               onClose();
@@ -477,6 +478,7 @@ export default function CameraSettingsModal({
                 ● Live Camera Test Signal
               </div>
               <button
+                type="button"
                 onClick={stopTestStream}
                 style={{
                   position: "absolute",
@@ -528,6 +530,7 @@ export default function CameraSettingsModal({
           <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
             {/* Launch / Stop AR Camera on Cake */}
             <button
+              type="button"
               onClick={handleToggleCakeCamera}
               style={{
                 width: "100%",
@@ -555,6 +558,7 @@ export default function CameraSettingsModal({
             {/* Test / Request Permission Button */}
             <div style={{ display: "flex", gap: "10px" }}>
               <button
+                type="button"
                 onClick={handleRequestPermission}
                 disabled={isTestingCamera}
                 style={{
@@ -577,6 +581,7 @@ export default function CameraSettingsModal({
               </button>
 
               <button
+                type="button"
                 onClick={handleFlipFacing}
                 style={{
                   padding: "10px 16px",
@@ -692,6 +697,7 @@ export default function CameraSettingsModal({
             Microphone: {micAllowed ? "🎤 Active" : "🎤 Ready on blow"}
           </div>
           <button
+            type="button"
             onClick={() => {
               stopTestStream();
               onClose();

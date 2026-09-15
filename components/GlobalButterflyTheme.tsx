@@ -84,10 +84,18 @@ export default function GlobalButterflyTheme() {
 
   // ── Ultra-Smooth 60FPS Hardware-Accelerated Floating Hearts Trail ──
   useEffect(() => {
+    // Skip entirely on touch-only devices — the canvas is CSS-hidden anyway
+    // but still eats GPU/battery. matchMedia is the reliable way to detect touch.
+    const isTouchDevice =
+      typeof window !== "undefined" &&
+      window.matchMedia("(hover: none) and (pointer: coarse)").matches;
+    if (isTouchDevice) return;
+
     const canvas = trailCanvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d", { alpha: true });
     if (!ctx) return;
+
 
     let animId: number;
     let width = window.innerWidth;
@@ -282,6 +290,7 @@ export default function GlobalButterflyTheme() {
       {/* ── 1. Full-Screen Floating Hearts Trail Canvas ── */}
       <canvas
         ref={trailCanvasRef}
+        className="global-trail-canvas"
         style={{
           position: "fixed",
           inset: 0,

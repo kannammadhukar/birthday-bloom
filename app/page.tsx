@@ -140,12 +140,9 @@ export default function Home() {
         localStorage.removeItem("divija_auth_role");
       } catch {}
 
-      // Intelligent Background Asset Preloader (Keeps website assets ready in memory before user reaches them)
-      try {
-        const audioPreload = new Audio();
-        audioPreload.src = "/audio/samajavaragamana.mp3";
-        audioPreload.preload = "auto";
-      } catch {}
+      // Defer audio — don't preload the full MP3 on page load.
+      // It will be loaded on first user interaction (play button / blow candles).
+      // This removes a 4MB download from the critical path on first visit.
 
       const keyPhotos = [
         "/images/photo_25.jpg",
@@ -361,7 +358,13 @@ export default function Home() {
     }
 
     syncCommunityWishes();
-    const pollTimer = setInterval(syncCommunityWishes, 6000);
+    // Poll every 30s instead of 6s to reduce network overhead.
+    // Also skip polling when the tab is in the background.
+    const pollTimer = setInterval(() => {
+      if (!document.hidden) {
+        syncCommunityWishes();
+      }
+    }, 30000);
     return () => clearInterval(pollTimer);
   }, [isAdmin, adminPreviewAsGuest]);
 
@@ -857,6 +860,7 @@ export default function Home() {
                 <div className="medley-controls-group" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                   {/* Play / Pause Button */}
                   <button
+                    type="button"
                     onClick={() => {
                       if (!medleyAudioRef.current) return;
                       smoothAlign("#cake-experience-card");
@@ -1028,6 +1032,7 @@ export default function Home() {
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
                 <button
+                  type="button"
                   onClick={() => {
                     if (!tributeVideoRef.current) return;
                     smoothAlign("#tribute-video-section");
@@ -1057,6 +1062,7 @@ export default function Home() {
                 </button>
 
                 <button
+                  type="button"
                   onClick={stopTributeVideo}
                   style={{
                     background: "rgba(180, 40, 60, 0.25)",
@@ -1097,6 +1103,7 @@ export default function Home() {
                 </span>
 
                 <button
+                  type="button"
                   onClick={() => {
                     smoothAlign("#tribute-video-section");
                     setIsTheaterOpen(true);
@@ -1554,6 +1561,7 @@ export default function Home() {
             </div>
 
             <button
+              type="button"
               onClick={() => stopTributeVideo(true)}
               style={{
                 background: "linear-gradient(135deg, rgba(212, 175, 55, 0.35), rgba(180, 40, 60, 0.55))",

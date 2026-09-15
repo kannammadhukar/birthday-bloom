@@ -2626,7 +2626,7 @@ export default function JourneySection() {
               }}
             >
               <div style={{ height: 112, borderRadius: 6, overflow: "hidden", background: "#1f181c" }}>
-                <img src={p.src} alt={p.alt} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                <img src={p.src} alt={p.alt} loading="lazy" decoding="async" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               </div>
               <div style={{
                 textAlign: "center",

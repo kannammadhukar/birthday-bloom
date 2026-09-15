@@ -82,10 +82,11 @@ body {
   }
 }
 
-/* On touch-only mobile devices, disable artificial cursor host */
+/* On touch-only mobile devices, disable artificial cursor host and particle trail */
 @media (hover: none) and (pointer: coarse) {
   .global-custom-cursor-host,
-  .global-cursor-picker-host {
+  .global-cursor-picker-host,
+  .global-trail-canvas {
     display: none !important;
   }
 }

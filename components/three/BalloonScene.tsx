@@ -284,6 +284,7 @@ function WishModal({ data, onClose }: { data: typeof SPHERE_DATA[0]; onClose: ()
       >
         {/* Close button */}
         <button
+          type="button"
           onClick={onClose}
           aria-label="Close"
           style={{
@@ -462,6 +463,7 @@ export default function BalloonScene() {
             All Gala Blessings Revealed!
           </div>
           <button
+            type="button"
             onClick={resetAll}
             style={{
               marginTop: 8, padding: "10px 30px",

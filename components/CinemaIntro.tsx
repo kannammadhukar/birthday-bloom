@@ -131,6 +131,7 @@ export default function CinemaIntro({ onDone }: Props) {
     >
       {/* Persistent Skip Intro Button */}
       <button
+        type="button"
         onClick={handleSkip}
         style={{
           position: "absolute",
