@@ -41,6 +41,7 @@ export default function BirthdayGiftAnimation({
   const [isExiting, setIsExiting] = useState(false);
   const [cursorEmoji, setCursorEmoji] = useState("🦋");
   const [showCursorDropdown, setShowCursorDropdown] = useState(false);
+  const lastBackdropTapRef = useRef<number>(0);
 
   // Sync cursor selection with global theme and localStorage
   useEffect(() => {
@@ -364,18 +365,107 @@ export default function BirthdayGiftAnimation({
       {isLetterOpen && (
         <div
           className="box__letter"
-          onClick={handleCloseLetter}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              handleCloseLetter();
+            }
+          }}
+          onDoubleClick={(e) => {
+            e.preventDefault();
+            handleCloseLetter();
+          }}
           onTouchEnd={(e) => {
             if (e.target === e.currentTarget) {
               e.preventDefault();
+              const now = Date.now();
+              const diff = now - lastBackdropTapRef.current;
+              lastBackdropTapRef.current = now;
+              // Closes on single tap or double-tap outside!
               handleCloseLetter();
             }
           }}
         >
+          {/* Pinned Screen-Level Close Button - Stays Visible Even When Scrolling Paper! */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleCloseLetter();
+            }}
+            onTouchEnd={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleCloseLetter();
+            }}
+            aria-label="Exit Letter"
+            style={{
+              position: "fixed",
+              top: "max(env(safe-area-inset-top), 16px)",
+              right: "max(env(safe-area-inset-right), 16px)",
+              zIndex: 100000,
+              width: "48px",
+              height: "48px",
+              minWidth: "48px",
+              minHeight: "48px",
+              borderRadius: "50%",
+              background: "linear-gradient(135deg, #e11d48, #9f1239)",
+              border: "2.5px solid #ffffff",
+              color: "#ffffff",
+              fontSize: "1.4rem",
+              fontWeight: 900,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+              boxShadow: "0 4px 25px rgba(0,0,0,0.85), 0 0 16px rgba(225, 29, 72, 0.6)",
+              touchAction: "manipulation",
+            }}
+            title="Close Letter (or double-tap outside)"
+          >
+            ✕
+          </button>
+
+          {/* Floating Top Exit Bar (Click or Tap to Exit) */}
+          <div
+            style={{
+              position: "fixed",
+              top: "max(env(safe-area-inset-top), 16px)",
+              left: "50%",
+              transform: "translateX(-50%)",
+              zIndex: 99999,
+              background: "rgba(30, 10, 20, 0.92)",
+              backdropFilter: "blur(12px)",
+              border: "1.5px solid rgba(255, 255, 255, 0.8)",
+              borderRadius: "24px",
+              padding: "6px 18px",
+              color: "#ffffff",
+              fontSize: "0.80rem",
+              fontWeight: 700,
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              boxShadow: "0 4px 18px rgba(0,0,0,0.7), 0 0 12px rgba(225, 29, 72, 0.4)",
+              pointerEvents: "auto",
+              cursor: "pointer",
+              touchAction: "manipulation",
+              whiteSpace: "nowrap",
+            }}
+            onClick={handleCloseLetter}
+            onTouchEnd={(e) => {
+              e.preventDefault();
+              handleCloseLetter();
+            }}
+          >
+            <span>✉️</span>
+            <span>Double-tap outside or tap here to exit</span>
+            <span style={{ color: "#ffd1d9", fontSize: "0.9rem" }}>✕</span>
+          </div>
+
           <div
             className="letter__border"
             onClick={(e) => e.stopPropagation()}
             onTouchEnd={(e) => e.stopPropagation()}
+            style={{ width: "clamp(300px, 86vw, 720px)" }}
           >
             <div className="letter">
               <div className="title__letter">

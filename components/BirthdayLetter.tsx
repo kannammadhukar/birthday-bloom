@@ -64,6 +64,7 @@ export default function BirthdayLetter() {
   const [showBackElements, setShowBackElements] = useState(false);
   const [phase, setPhase] = useState<Phase>("idle");
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const lastBackdropTapRef = useRef<number>(0);
 
   /* Clear all pending timers on unmount */
   useEffect(() => () => { timersRef.current.forEach(clearTimeout); }, []);
@@ -686,20 +687,109 @@ export default function BirthdayLetter() {
               flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
-              background: "rgba(8, 3, 5, 0.85)",
-              backdropFilter: "blur(12px)",
-              padding: "max(14px, 2.5vh) max(14px, 3.5vw)",
+              background: "rgba(8, 3, 5, 0.88)",
+              backdropFilter: "blur(14px)",
+              padding: "max(14px, 3.5vh) max(14px, 4vw)",
               animation: "backdropFadeIn 0.3s ease forwards",
               overflowY: "auto",
+              touchAction: "manipulation",
             }}
-            onClick={handleReseal}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                handleReseal();
+              }
+            }}
+            onDoubleClick={(e) => {
+              e.preventDefault();
+              handleReseal();
+            }}
             onTouchEnd={(e) => {
               if (e.target === e.currentTarget) {
                 e.preventDefault();
+                const now = Date.now();
+                const diff = now - lastBackdropTapRef.current;
+                lastBackdropTapRef.current = now;
+                // Closes on single tap or double-tap outside!
                 handleReseal();
               }
             }}
           >
+            {/* Pinned Screen-Level Close Button - Stays Visible Even When Scrolling Paper! */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleReseal();
+              }}
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleReseal();
+              }}
+              aria-label="Exit Letter"
+              style={{
+                position: "fixed",
+                top: "max(env(safe-area-inset-top), 16px)",
+                right: "max(env(safe-area-inset-right), 16px)",
+                zIndex: 100000,
+                width: "48px",
+                height: "48px",
+                minWidth: "48px",
+                minHeight: "48px",
+                borderRadius: "50%",
+                background: "linear-gradient(135deg, #881337, #4c0519)",
+                border: "2px solid #ffd700",
+                color: "#ffd700",
+                fontSize: "1.4rem",
+                fontWeight: 900,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                boxShadow: "0 4px 25px rgba(0,0,0,0.85), 0 0 16px rgba(255, 215, 0, 0.6)",
+                touchAction: "manipulation",
+              }}
+              title="Close Letter (or double-tap outside)"
+            >
+              ✕
+            </button>
+
+            {/* Floating Top Exit Bar (Click or Tap to Exit) */}
+            <div
+              style={{
+                position: "fixed",
+                top: "max(env(safe-area-inset-top), 16px)",
+                left: "50%",
+                transform: "translateX(-50%)",
+                zIndex: 99999,
+                background: "rgba(24, 6, 15, 0.92)",
+                backdropFilter: "blur(12px)",
+                border: "1.5px solid rgba(255, 215, 0, 0.6)",
+                borderRadius: "24px",
+                padding: "6px 18px",
+                color: "#fef08a",
+                fontSize: "0.80rem",
+                fontWeight: 700,
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                boxShadow: "0 4px 18px rgba(0,0,0,0.7), 0 0 12px rgba(212,175,55,0.3)",
+                pointerEvents: "auto",
+                cursor: "pointer",
+                touchAction: "manipulation",
+                whiteSpace: "nowrap",
+              }}
+              onClick={handleReseal}
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                handleReseal();
+              }}
+            >
+              <span>✉️</span>
+              <span>Double-tap outside or tap here to exit</span>
+              <span style={{ color: "#ffd700", fontSize: "0.9rem" }}>✕</span>
+            </div>
+
             <div
               onClick={e => e.stopPropagation()}
               onTouchEnd={e => e.stopPropagation()}
@@ -710,9 +800,9 @@ export default function BirthdayLetter() {
                 color: "#0a0f1d",
                 borderRadius: 14,
                 padding: "clamp(1.8rem, 4.5vw, 3.5rem) clamp(1.4rem, 4vw, 3.2rem) 2.2rem",
-                maxWidth: 640,
-                width: "100%",
-                maxHeight: "88dvh",
+                maxWidth: 620,
+                width: "min(88vw, 620px)",
+                maxHeight: "84dvh",
                 overflowY: "auto",
                 margin: "auto",
                 boxShadow: "0 30px 80px rgba(0,0,0,0.85), 0 0 50px rgba(212,175,55,0.25)",
@@ -721,7 +811,7 @@ export default function BirthdayLetter() {
                 position: "relative",
               }}
             >
-              {/* Floating Top-Right Close Button ✕ */}
+              {/* Internal Corner Close Button ✕ */}
               <button
                 type="button"
                 onClick={handleReseal}
