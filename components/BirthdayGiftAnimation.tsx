@@ -160,6 +160,17 @@ export default function BirthdayGiftAnimation({
     setIsLetterOpen(false);
   };
 
+  // Close letter on Escape key press
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isLetterOpen) {
+        handleCloseLetter();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isLetterOpen]);
+
   // Rotating circle text: "HAPPY-BIRTHDAY-"
   const circleLetters = "HAPPY-BIRTHDAY-".split("");
 
@@ -351,8 +362,21 @@ export default function BirthdayGiftAnimation({
 
       {/* ── Interactive Birthday Letter Popup Modal ── */}
       {isLetterOpen && (
-        <div className="box__letter" onClick={handleCloseLetter}>
-          <div className="letter__border" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="box__letter"
+          onClick={handleCloseLetter}
+          onTouchEnd={(e) => {
+            if (e.target === e.currentTarget) {
+              e.preventDefault();
+              handleCloseLetter();
+            }
+          }}
+        >
+          <div
+            className="letter__border"
+            onClick={(e) => e.stopPropagation()}
+            onTouchEnd={(e) => e.stopPropagation()}
+          >
             <div className="letter">
               <div className="title__letter">
                 {letterTitle} {letterTitle && <span className="title-heart">❤️</span>}
@@ -394,12 +418,50 @@ export default function BirthdayGiftAnimation({
                   />
                 </div>
               </div>
+
+              {/* Bottom Close Button inside the letter */}
+              <div style={{ textAlign: "center", marginTop: "14px" }}>
+                <button
+                  type="button"
+                  onClick={handleCloseLetter}
+                  onTouchEnd={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleCloseLetter();
+                  }}
+                  style={{
+                    background: "linear-gradient(135deg, #e11d48, #be123c)",
+                    color: "#ffffff",
+                    border: "2px solid #ffffff",
+                    borderRadius: "24px",
+                    padding: "8px 24px",
+                    fontSize: "0.92rem",
+                    fontWeight: 800,
+                    cursor: "pointer",
+                    boxShadow: "0 4px 14px rgba(190, 18, 60, 0.4)",
+                    minHeight: "44px",
+                    touchAction: "manipulation",
+                  }}
+                >
+                  ✕ Close &amp; Return to Gift Card
+                </button>
+              </div>
             </div>
 
             {/* Modal Close Button (X) */}
-            <div className="close" onClick={handleCloseLetter} role="button" aria-label="Close Letter">
+            <button
+              type="button"
+              className="close"
+              onClick={handleCloseLetter}
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleCloseLetter();
+              }}
+              aria-label="Close Letter"
+            >
               ✕
-            </div>
+            </button>
           </div>
         </div>
       )}
@@ -1338,6 +1400,13 @@ export default function BirthdayGiftAnimation({
           }
           .flag__birthday .flag__right {
             transform: rotate(10deg) translate(110px, 10px) scaleX(-1);
+          }
+          .letter__border .close {
+            right: 8px !important;
+            top: 8px !important;
+            width: 44px !important;
+            height: 44px !important;
+            z-index: 30 !important;
           }
           .content {
             flex-direction: column;

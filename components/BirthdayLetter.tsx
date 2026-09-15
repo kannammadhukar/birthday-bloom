@@ -71,12 +71,24 @@ export default function BirthdayLetter() {
   /* Lock body scroll when full letter overlay is open */
   useEffect(() => {
     if (phase === "open") {
-      const prevOverflow = document.body.style.overflow;
       document.body.style.overflow = "hidden";
       return () => {
-        document.body.style.overflow = prevOverflow;
+        document.body.style.overflow = "";
       };
+    } else {
+      document.body.style.overflow = "";
     }
+  }, [phase]);
+
+  /* Close letter with Escape key */
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && phase === "open") {
+        handleReseal();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [phase]);
 
   /* ── Flip envelope over ─────────────────────────────────── */
@@ -122,6 +134,9 @@ export default function BirthdayLetter() {
     timersRef.current.forEach(clearTimeout);
     playRustle(0.18);
     setPhase("idle");
+    if (typeof document !== "undefined") {
+      document.body.style.overflow = "";
+    }
   }
 
   /* ── Derived states from phase ──────────────────────────── */
@@ -678,9 +693,16 @@ export default function BirthdayLetter() {
               overflowY: "auto",
             }}
             onClick={handleReseal}
+            onTouchEnd={(e) => {
+              if (e.target === e.currentTarget) {
+                e.preventDefault();
+                handleReseal();
+              }
+            }}
           >
             <div
               onClick={e => e.stopPropagation()}
+              onTouchEnd={e => e.stopPropagation()}
               style={{
                 background: "#fffdf9",
                 backgroundImage: "linear-gradient(rgba(147,197,253,0.22) 1px, transparent 1px)",
@@ -699,6 +721,43 @@ export default function BirthdayLetter() {
                 position: "relative",
               }}
             >
+              {/* Floating Top-Right Close Button ✕ */}
+              <button
+                type="button"
+                onClick={handleReseal}
+                onTouchEnd={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleReseal();
+                }}
+                aria-label="Close Letter"
+                style={{
+                  position: "absolute",
+                  top: "12px",
+                  right: "12px",
+                  width: "44px",
+                  height: "44px",
+                  minWidth: "44px",
+                  minHeight: "44px",
+                  borderRadius: "50%",
+                  background: "linear-gradient(135deg, #7a1526, #380811)",
+                  border: "2px solid #ffd700",
+                  color: "#ffd700",
+                  fontSize: "1.3rem",
+                  fontWeight: 900,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  boxShadow: "0 4px 18px rgba(0,0,0,0.65), 0 0 14px rgba(212,175,55,0.45)",
+                  zIndex: 30,
+                  touchAction: "manipulation",
+                }}
+                title="Close Letter"
+              >
+                ✕
+              </button>
+
               <div style={{
                 position: "absolute", top: 0, bottom: 0, left: 54, width: 1,
                 background: "rgba(212,175,55,0.4)", pointerEvents: "none",
@@ -746,13 +805,20 @@ export default function BirthdayLetter() {
                 <button
                   type="button"
                   onClick={handleReseal}
+                  onTouchEnd={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleReseal();
+                  }}
                   style={{
                     background: "#5c111d", color: "#f3e5ab",
                     fontFamily: "'Outfit', sans-serif", fontSize: "0.86rem", fontWeight: 700,
                     padding: "0.75rem 2.2rem", borderRadius: 50,
-                    border: "1px solid rgba(212,175,55,0.45)", cursor: "pointer",
+                    border: "1.8px solid #ffd700", cursor: "pointer",
                     boxShadow: "0 4px 20px rgba(107,20,34,0.5)",
                     transition: "all 0.2s ease",
+                    minHeight: "48px",
+                    touchAction: "manipulation",
                   }}
                   onMouseEnter={e => {
                     e.currentTarget.style.background = "#7a1526";
@@ -766,7 +832,7 @@ export default function BirthdayLetter() {
                   Close &amp; Reseal Envelope ✉️
                 </button>
                 <p style={{ marginTop: "0.6rem", color: "#4a3b32", fontSize: "0.85rem", lineHeight: 1.6, fontWeight: 500 }}>
-                  ✦ Tap outside to close ✦
+                  ✦ Tap ✕ at top right or tap outside to close ✦
                 </p>
               </div>
             </div>
