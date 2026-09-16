@@ -49,6 +49,8 @@ export default function LiveCakeExperience({
   const [isRecording, setIsRecording] = useState(false);
   const [recordingCountdown, setRecordingCountdown] = useState<number | null>(null);
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [celebrationPostRecordSec, setCelebrationPostRecordSec] = useState<number | null>(null);
+  const isCeremonyRunningRef = useRef(false);
 
   // ── Keepsake Modal, Photo & Video States ──
   const [capturedPhotoUrl, setCapturedPhotoUrl] = useState<string | null>(null);
@@ -1097,52 +1099,86 @@ export default function LiveCakeExperience({
       fireCelebrationConfetti();
       triggerVideoConfetti();
 
-      // Celebration recording and photo capture runs unconditionally in BOTH Studio & AR Mode
+      // Ensure composite canvas is actively running
       startCompositeRenderLoop();
+
+      // If recording is not already active, start 5s celebration clip with auto-save
       if (!isRecordingRef.current || !mediaRecorderRef.current || mediaRecorderRef.current.state !== "recording") {
-        startVideoRecording(4500, false);
+        startVideoRecording(5200, true);
+        setTimeout(() => {
+          autoCaptureCelebrationSnap(true);
+        }, 1500);
       }
-
-      // Snap commemorative keepsake photo at peak celebration
-      setTimeout(() => {
-        autoCaptureCelebrationSnap(false);
-      }, 1500);
-
-      // Record celebration
-      setTimeout(() => {
-        if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
-          try {
-            mediaRecorderRef.current.stop();
-          } catch (err) {
-            console.warn("Error stopping MediaRecorder:", err);
-          }
-        }
-      }, 4500);
     },
     [onToggleBlow, autoCaptureCelebrationSnap]
   );
 
-  // ── Unified 7-Second Pre-Roll & Video Recording Ceremony Flow ──
-  const startCelebrationRecordingFlow = useCallback(() => {
-    setIsPositioning(false);
-    startCompositeRenderLoop();
-    startVideoRecording(); // Start recording IMMEDIATELY so the entire 7 seconds are recorded!
-    setCountdown(7);
+  // ── Unified Automatic 3, 2, 1 Countdown Ceremony with Auto-Recording & Auto-Download ──
+  const startBlowoutCeremony = useCallback(
+    (reasonMsg?: string | unknown) => {
+      // Ironclad guard: do not run multiple times or if already blown
+      if (hasTriggeredBlowRef.current || candlesBlownRef.current || isCeremonyRunningRef.current) return;
+      isCeremonyRunningRef.current = true;
+      const msg = typeof reasonMsg === "string" ? reasonMsg : undefined;
 
-    if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
-    countdownIntervalRef.current = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev !== null && prev > 1) {
-          return prev - 1;
+      // 1. Stop background detector loops & align container
+      stopMic();
+      stopFaceAnalysis();
+      smoothAlign(containerRef.current);
+
+      // 2. Start composite render loop so canvas is actively drawing
+      startCompositeRenderLoop();
+
+      // 3. START VIDEO RECORDING RIGHT AT COUNT 3 (autoSave = true)
+      // Total duration: 3s countdown (3, 2, 1) + 5s celebration post-blowout = 8.2s
+      startVideoRecording(8200, true);
+
+      // 4. Start 3, 2, 1 Countdown ("from 3 only")
+      setCountdown(3);
+      showToast("🔴 Recording started! 3... Make your wish! 🎂✨", 2500);
+
+      let currentCount = 3;
+      if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = setInterval(() => {
+        currentCount -= 1;
+        if (currentCount > 0) {
+          setCountdown(currentCount);
+        } else {
+          // Reached 0 -> Blow out candles!
+          clearInterval(countdownIntervalRef.current);
+          countdownIntervalRef.current = null;
+          setCountdown(null);
+
+          // Blow out candles, launch confetti & audio
+          triggerBlowSuccess(msg || "💨 Candles blown out! Divija's wish is granted! 👑✨");
+
+          // Automatically capture commemorative Polaroid photo (+1.5s after blowout) and save to device
+          setTimeout(() => {
+            autoCaptureCelebrationSnap(true);
+          }, 1500);
+
+          // Start 5-second post-blowout celebration timer in UI
+          let postSec = 5;
+          setCelebrationPostRecordSec(postSec);
+          const postInterval = setInterval(() => {
+            postSec -= 1;
+            if (postSec <= 0) {
+              clearInterval(postInterval);
+              setCelebrationPostRecordSec(null);
+              isCeremonyRunningRef.current = false;
+              // Ensure recording stops cleanly, triggering automatic download in onstop
+              stopVideoRecording();
+            } else {
+              setCelebrationPostRecordSec(postSec);
+            }
+          }, 1000);
         }
-        clearInterval(countdownIntervalRef.current);
-        countdownIntervalRef.current = null;
-        isArmedRef.current = true;
-        showToast("💨 NOW! Make your wish & blow out the candles! 🎂✨", 4000);
-        return null;
-      });
-    }, 1000);
-  }, []);
+      }, 1000);
+    },
+    [triggerBlowSuccess, autoCaptureCelebrationSnap]
+  );
+
+  const startCelebrationRecordingFlow = startBlowoutCeremony;
 
   // ── MediaPipe Face Landmarker Initializer ──
   async function initFaceLandmarker() {
@@ -1246,7 +1282,7 @@ export default function LiveCakeExperience({
                   faceBlowingTicksRef.current++;
                   const faintMic = avgTurbulenceRef.current > 45;
                   if (faceBlowingTicksRef.current >= 2 || (faceBlowingTicksRef.current >= 1 && faintMic)) {
-                    triggerBlowSuccess("💨 You blew out the candles! Happy 23rd Birthday Divija! 🎉✨");
+                    startBlowoutCeremony("💨 You blew out the candles! Happy 23rd Birthday Divija! 🎉✨");
                     faceBlowingTicksRef.current = 0;
                   }
                 } else {
@@ -1506,7 +1542,7 @@ export default function LiveCakeExperience({
         if (isAboveThreshold && isArmedRef.current && !candlesBlownRef.current && !hasTriggeredBlowRef.current) {
           sustainedBlowTicksRef.current++;
           if (sustainedBlowTicksRef.current >= 4) {
-            triggerBlowSuccess("💨 Breath detected! Candles blown out! 🎉✨");
+            startBlowoutCeremony("💨 Breath detected! Candles blown out! 🎉✨");
             sustainedBlowTicksRef.current = 0;
           }
         } else {
@@ -1628,7 +1664,7 @@ export default function LiveCakeExperience({
           </p>
           <button
             type="button"
-            onClick={startCelebrationRecordingFlow}
+            onClick={() => startCelebrationRecordingFlow()}
             style={{
               width: "100%",
               padding: "12px 20px",
@@ -1646,40 +1682,86 @@ export default function LiveCakeExperience({
               gap: "8px",
             }}
           >
-            <span>🎬 Ready! Start 7s Celebration</span>
+            <span>🎬 Ready! Start 3, 2, 1 Celebration</span>
           </button>
         </div>
       )}
 
-      {/* ── 7-Second Celebration Recording & Make a Wish Countdown Overlay ── */}
+      {/* ── Automatic 3, 2, 1 Countdown & Auto-Recording Overlay ── */}
       {countdown !== null && (
         <div
           style={{
             position: "absolute",
-            top: "28%",
+            top: "32%",
             left: "50%",
             transform: "translate(-50%, -50%)",
-            zIndex: 35,
+            zIndex: 40,
+            background: "rgba(18, 4, 14, 0.95)",
+            backdropFilter: "blur(20px)",
+            WebkitBackdropFilter: "blur(20px)",
+            border: "2.5px solid #ffd166",
+            borderRadius: "28px",
+            padding: "18px 24px",
+            textAlign: "center",
+            width: "min(340px, 90vw)",
+            boxSizing: "border-box",
+            boxShadow: "0 20px 55px rgba(0, 0, 0, 0.92), 0 0 35px rgba(255, 209, 102, 0.6)",
+            animation: "fadeIn 0.2s ease-out",
+            pointerEvents: "none",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+          }}
+        >
+          <div style={{ fontSize: "0.82rem", color: "#fef08a", fontWeight: 800, letterSpacing: "1.5px", textTransform: "uppercase", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", whiteSpace: "nowrap" }}>
+            <span style={{ color: "#ef4444", fontSize: "1.1rem" }}>🔴</span>
+            <span>Recording Automatically</span>
+          </div>
+          <div style={{ fontSize: "4.8rem", fontWeight: 900, color: "#ffffff", lineHeight: 1.05, margin: "4px 0", textShadow: "0 0 25px rgba(255, 209, 102, 0.95)" }}>
+            {countdown}
+          </div>
+          <div style={{ fontSize: "0.88rem", color: "#fbcfe8", fontWeight: 700, lineHeight: 1.3 }}>
+            {countdown === 3 && "✨ 3... Make your 23rd birthday wish!"}
+            {countdown === 2 && "💨 2... Inhale deeply & get ready to blow!"}
+            {countdown === 1 && "🎂 1... Blow candles now!"}
+          </div>
+        </div>
+      )}
+
+      {/* ── Post-Blowout 5-Second Celebration Recording & Auto-Download Overlay ── */}
+      {celebrationPostRecordSec !== null && (
+        <div
+          style={{
+            position: "absolute",
+            top: "22%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            zIndex: 40,
             background: "rgba(18, 4, 14, 0.94)",
             backdropFilter: "blur(18px)",
             WebkitBackdropFilter: "blur(18px)",
-            border: "2.5px solid #ffd166",
-            borderRadius: "26px",
-            padding: "18px 30px",
+            border: "2px solid #4ade80",
+            borderRadius: "24px",
+            padding: "12px 20px",
             textAlign: "center",
-            boxShadow: "0 16px 45px rgba(0, 0, 0, 0.9), 0 0 35px rgba(255, 209, 102, 0.55)",
-            animation: "fadeIn 0.2s ease-out",
+            boxShadow: "0 12px 40px rgba(0, 0, 0, 0.85), 0 0 25px rgba(74, 222, 128, 0.45)",
             pointerEvents: "none",
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "10px",
+            width: "min(340px, 92vw)",
+            boxSizing: "border-box",
           }}
         >
-          <div style={{ fontSize: "0.78rem", color: "#ffd166", fontWeight: 800, letterSpacing: "2px", textTransform: "uppercase" }}>
-            ✦ Recording Live · Smile with Cake ✦
-          </div>
-          <div style={{ fontSize: "4.2rem", fontWeight: 900, color: "#ffffff", lineHeight: 1.05, margin: "4px 0", textShadow: "0 0 20px rgba(255, 209, 102, 0.8)" }}>
-            {countdown}
-          </div>
-          <div style={{ fontSize: "0.85rem", color: "#fbcfe8", fontWeight: 700 }}>
-            {countdown > 3 ? "😊 Smile & make your 23rd birthday wish!" : "💨 Inhale & get ready to blow!"}
+          <span style={{ color: "#ef4444", fontSize: "1.2rem", flexShrink: 0 }}>🔴</span>
+          <div style={{ textAlign: "left" }}>
+            <div style={{ color: "#ffffff", fontWeight: 900, fontSize: "clamp(0.85rem, 1.6vw, 0.98rem)" }}>
+              Recording Celebration ({celebrationPostRecordSec}s)...
+            </div>
+            <div style={{ color: "#86efac", fontSize: "clamp(0.72rem, 1.3vw, 0.8rem)", fontWeight: 700 }}>
+              📥 Downloading automatically to your device!
+            </div>
           </div>
         </div>
       )}
@@ -1964,7 +2046,9 @@ export default function LiveCakeExperience({
             showToast("📍 Cake anchored to surface! ✨", 1800);
           }}
           onToggleBlow={() => {
-            triggerBlowSuccess("💨 You tapped the cake! Candles blown out! 🎉✨");
+            if (!candlesBlown) {
+              startBlowoutCeremony("💨 You tapped the cake! Starting celebration! 🎉✨");
+            }
           }}
         />
       </div>
@@ -2406,18 +2490,21 @@ export default function LiveCakeExperience({
                 </button>
               )}
 
-              {/* 4. Direct Blow Button */}
+              {/* 4. Blow Candles Button with 3, 2, 1 Countdown & Auto-Save */}
               <button
                 type="button"
                 onClick={() => {
-                  triggerBlowSuccess("💨 Candles blown out! Divija's wish is granted! 👑✨");
+                  startBlowoutCeremony("💨 Candles blown out! Divija's wish is granted! 👑✨");
                 }}
+                disabled={countdown !== null || celebrationPostRecordSec !== null}
                 style={{
                   padding: "9px 18px",
                   borderRadius: "32px",
-                  border: "1px solid rgba(255, 255, 255, 0.35)",
-                  cursor: "pointer",
-                  background: "rgba(255, 255, 255, 0.1)",
+                  border: countdown !== null ? "2px solid #ef4444" : "1px solid rgba(255, 255, 255, 0.35)",
+                  cursor: countdown !== null || celebrationPostRecordSec !== null ? "wait" : "pointer",
+                  background: countdown !== null
+                    ? "linear-gradient(135deg, #b91c1c 0%, #991b1b 100%)"
+                    : "rgba(255, 255, 255, 0.1)",
                   color: "#ffffff",
                   fontWeight: 700,
                   fontSize: "clamp(0.82rem, 1.4vw, 0.92rem)",
@@ -2425,9 +2512,16 @@ export default function LiveCakeExperience({
                   alignItems: "center",
                   gap: "6px",
                   transition: "all 0.15s ease",
+                  boxShadow: countdown !== null ? "0 0 16px rgba(239, 68, 68, 0.6)" : "none",
                 }}
               >
-                <span>💨 Blow Candles</span>
+                <span>
+                  {countdown !== null
+                    ? `🔴 ${countdown} · Recording...`
+                    : celebrationPostRecordSec !== null
+                    ? `🔴 Celebration (${celebrationPostRecordSec}s)`
+                    : "💨 Blow Candles (3, 2, 1)"}
+                </span>
               </button>
 
               {/* Flip camera if live camera is on */}
