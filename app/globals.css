@@ -99,14 +99,23 @@ body {
   z-index: 9999990 !important;
 }
 
-/* On touch-only mobile & tablet devices, hide cursor picker, follower, and trail since mobile uses direct touch */
-@media (hover: none) and (pointer: coarse), (max-width: 768px) {
-  .global-trail-canvas,
-  .global-custom-cursor-host,
-  .global-cursor-picker-host,
+/* On mobile screens, optimize cursor picker pill and enable smooth touch butterfly & heart trail */
+@media (max-width: 768px) {
   .cursor-selector-wrapper,
   .pavilion-cursor-btn {
     display: none !important;
+  }
+  .global-cursor-picker-host {
+    bottom: 10px !important;
+    left: 10px !important;
+    transform: scale(0.9);
+    transform-origin: bottom left;
+  }
+  .global-custom-cursor-host {
+    display: flex !important;
+  }
+  .global-trail-canvas {
+    display: block !important;
   }
 }
 
@@ -1120,9 +1129,6 @@ input[type="range"]::-moz-range-track {
 
 /* Tablet & Mobile Single-Screen Viewport Fit (No vertical cutoffs) */
 @media (max-width: 768px) {
-  .global-cursor-picker-host,
-  .global-custom-cursor-host,
-  .global-trail-canvas,
   .cursor-selector-wrapper,
   .pavilion-cursor-btn {
     display: none !important;

@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, memo } from "react";
 import { createPortal } from "react-dom";
 
 export interface EmojiOption {
@@ -27,6 +27,86 @@ interface BirthdayGiftAnimationProps {
   onToggleMusic?: () => void;
 }
 
+// ── Memoized Isolated Letter Title Typewriter (Zero outer re-renders) ──
+const LetterTypewriterTitle = memo(function LetterTypewriterTitle({
+  isOpen,
+  fullTitle,
+  startDelay = 600,
+  speed = 85,
+}: {
+  isOpen: boolean;
+  fullTitle: string;
+  startDelay?: number;
+  speed?: number;
+}) {
+  const [displayed, setDisplayed] = useState("");
+
+  useEffect(() => {
+    if (!isOpen) {
+      setDisplayed("");
+      return;
+    }
+    let tIndex = 0;
+    const startTimeout = setTimeout(() => {
+      const tInterval = setInterval(() => {
+        if (tIndex < fullTitle.length) {
+          setDisplayed(fullTitle.slice(0, tIndex + 1));
+          tIndex++;
+        } else {
+          clearInterval(tInterval);
+        }
+      }, speed);
+      return () => clearInterval(tInterval);
+    }, startDelay);
+
+    return () => clearTimeout(startTimeout);
+  }, [isOpen, fullTitle, startDelay, speed]);
+
+  return (
+    <>
+      {displayed} {displayed && <span className="title-heart">❤️</span>}
+    </>
+  );
+});
+
+// ── Memoized Isolated Letter Body Typewriter (Zero outer re-renders) ──
+const LetterTypewriterBody = memo(function LetterTypewriterBody({
+  isOpen,
+  fullText,
+  startDelay = 2200,
+  speed = 32,
+}: {
+  isOpen: boolean;
+  fullText: string;
+  startDelay?: number;
+  speed?: number;
+}) {
+  const [displayed, setDisplayed] = useState("");
+
+  useEffect(() => {
+    if (!isOpen) {
+      setDisplayed("");
+      return;
+    }
+    let bIndex = 0;
+    const startTimeout = setTimeout(() => {
+      const bInterval = setInterval(() => {
+        if (bIndex < fullText.length) {
+          setDisplayed(fullText.slice(0, bIndex + 1));
+          bIndex++;
+        } else {
+          clearInterval(bInterval);
+        }
+      }, speed);
+      return () => clearInterval(bInterval);
+    }, startDelay);
+
+    return () => clearTimeout(startTimeout);
+  }, [isOpen, fullText, startDelay, speed]);
+
+  return <p>{displayed}</p>;
+});
+
 export default function BirthdayGiftAnimation({
   onContinueToGala,
   audioPlaying = true,
@@ -35,8 +115,6 @@ export default function BirthdayGiftAnimation({
   const [dateText, setDateText] = useState("");
   const [showDateStars, setShowDateStars] = useState(false);
   const [isLetterOpen, setIsLetterOpen] = useState(false);
-  const [letterTitle, setLetterTitle] = useState("");
-  const [letterBody, setLetterBody] = useState("");
   const [showLetterGifs, setShowLetterGifs] = useState(false);
   const [showLetterHearts, setShowLetterHearts] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
@@ -121,23 +199,8 @@ export default function BirthdayGiftAnimation({
   // Open Letter Animation
   const handleOpenLetter = () => {
     setIsLetterOpen(true);
-    setLetterTitle("");
-    setLetterBody("");
     setShowLetterGifs(false);
     setShowLetterHearts(false);
-
-    // Title typewriter
-    setTimeout(() => {
-      let tIndex = 0;
-      const tInterval = setInterval(() => {
-        if (tIndex < fullTitle.length) {
-          setLetterTitle((prev) => prev + fullTitle.charAt(tIndex));
-          tIndex++;
-        } else {
-          clearInterval(tInterval);
-        }
-      }, 90);
-    }, 600);
 
     // GIFs appear
     setTimeout(() => {
@@ -148,19 +211,6 @@ export default function BirthdayGiftAnimation({
     setTimeout(() => {
       setShowLetterHearts(true);
     }, 1800);
-
-    // Body typewriter
-    setTimeout(() => {
-      let bIndex = 0;
-      const bInterval = setInterval(() => {
-        if (bIndex < fullBody.length) {
-          setLetterBody((prev) => prev + fullBody.charAt(bIndex));
-          bIndex++;
-        } else {
-          clearInterval(bInterval);
-        }
-      }, 35);
-    }, 2200);
   };
 
   const handleCloseLetter = () => {
@@ -508,7 +558,7 @@ export default function BirthdayGiftAnimation({
           >
             <div className="letter">
               <div className="title__letter">
-                {letterTitle} {letterTitle && <span className="title-heart">❤️</span>}
+                <LetterTypewriterTitle isOpen={isLetterOpen} fullTitle={fullTitle} />
               </div>
 
               <div className="content__letter">
@@ -536,7 +586,7 @@ export default function BirthdayGiftAnimation({
                     <img src="/images/gift_animation/love_img.gif" alt="Love Banner" width="180" />
                   </div>
                   <div className="text__letter">
-                    <p>{letterBody}</p>
+                    <LetterTypewriterBody isOpen={isLetterOpen} fullText={fullBody} />
                   </div>
                   <img
                     id="mewmew"
@@ -1177,10 +1227,12 @@ export default function BirthdayGiftAnimation({
           font-size: 1.35rem;
           animation: scaleHeart 1.2s infinite linear;
           display: inline-block;
+          transform: translateZ(0);
+          will-change: transform;
         }
         @keyframes scaleHeart {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.25); }
+          0%, 100% { transform: scale(1) translateZ(0); }
+          50% { transform: scale(1.22) translateZ(0); }
         }
 
         /* Swaying Balloons */
@@ -1266,6 +1318,8 @@ export default function BirthdayGiftAnimation({
           position: absolute;
           font-size: 1.3rem;
           animation: scaleHeart 1.2s infinite linear;
+          transform: translateZ(0);
+          will-change: transform;
         }
 
         /* ── Twinkling Stars ── */
@@ -1417,6 +1471,9 @@ export default function BirthdayGiftAnimation({
         .title-heart {
           font-size: 1.4rem;
           animation: scaleHeart 1s infinite linear;
+          display: inline-block;
+          transform: translateZ(0);
+          will-change: transform;
         }
         .content__letter {
           position: relative;
@@ -1436,6 +1493,9 @@ export default function BirthdayGiftAnimation({
           justify-content: center;
           border-right: 3px dashed #daccbf;
           padding-right: 12px;
+          contain: layout style;
+          transform: translateZ(0);
+          will-change: transform;
         }
         #heart__letter {
           opacity: 0;
@@ -1443,17 +1503,23 @@ export default function BirthdayGiftAnimation({
           max-width: 200px;
           object-fit: contain;
           transition: opacity 0.6s ease;
+          transform: translateZ(0);
+          will-change: transform, opacity;
+          backface-visibility: hidden;
         }
         #heart__letter.animationOp {
           opacity: 1;
         }
         .left-letter-pane .heart {
           position: absolute;
+          transform: translateZ(0);
+          will-change: transform;
+          backface-visibility: hidden;
           animation: scaleHeartLetter 1.2s infinite ease-in-out;
         }
         @keyframes scaleHeartLetter {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.3); }
+          0%, 100% { transform: scale(1) translateZ(0); }
+          50% { transform: scale(1.25) translateZ(0); }
         }
         .heart_1 { top: 15px; left: 15px; width: 22px; }
         .heart_2 { top: 10px; right: 20px; width: 20px; }
@@ -1648,13 +1714,19 @@ export default function BirthdayGiftAnimation({
           }
           .left-letter-pane {
             width: 100%;
+            height: 120px;
             min-height: 120px;
+            max-height: 120px;
             border-right: none;
             border-bottom: 2px dashed #daccbf;
-            padding-bottom: 10px;
+            padding-bottom: 6px;
+            contain: layout style paint;
+            flex-shrink: 0;
+            overflow: visible;
           }
           #heart__letter {
             max-width: 110px;
+            height: auto;
           }
           .right-letter-pane {
             width: 100%;
