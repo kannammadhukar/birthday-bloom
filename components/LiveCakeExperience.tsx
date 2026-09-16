@@ -1633,21 +1633,21 @@ export default function LiveCakeExperience({
         justifyContent: "space-between",
       }}
     >
-      {/* ── Camera Stabilization & Hold Steady Placement Guide ── */}
+      {/* ── Camera Stabilization & Hold Steady Placement Guide (Positioned at bottom above dock so face is 100% visible) ── */}
       {cameraActive && isPositioning && (
         <div
           style={{
             position: "absolute",
-            top: "24%",
+            bottom: "100px",
             left: "50%",
-            transform: "translate(-50%, -50%)",
+            transform: "translateX(-50%)",
             zIndex: 35,
             background: "linear-gradient(145deg, rgba(28, 8, 20, 0.95) 0%, rgba(12, 2, 8, 0.98) 100%)",
             backdropFilter: "blur(18px)",
             WebkitBackdropFilter: "blur(18px)",
             border: "2px solid #ffd166",
-            borderRadius: "26px",
-            padding: "20px 24px",
+            borderRadius: "22px",
+            padding: "14px 20px",
             textAlign: "center",
             boxShadow: "0 18px 50px rgba(0, 0, 0, 0.9), 0 0 35px rgba(255, 209, 102, 0.4)",
             maxWidth: "92%",
@@ -1655,24 +1655,26 @@ export default function LiveCakeExperience({
             animation: "fadeIn 0.25s ease-out",
           }}
         >
-          <div style={{ fontSize: "2rem", marginBottom: "4px" }}>🎂✨</div>
-          <h3 style={{ color: "#ffd166", fontSize: "1.05rem", fontWeight: 800, margin: "0 0 6px", letterSpacing: "0.5px" }}>
-            Hold Camera Steady
-          </h3>
-          <p style={{ color: "rgba(243, 237, 225, 0.88)", fontSize: "0.82rem", margin: "0 0 16px", lineHeight: 1.35 }}>
-            Place phone or hold steady so your face is framed above the cake. When ready, tap below!
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", marginBottom: "4px" }}>
+            <span style={{ fontSize: "1.3rem" }}>🎂✨</span>
+            <h3 style={{ color: "#ffd166", fontSize: "0.98rem", fontWeight: 800, margin: 0, letterSpacing: "0.5px" }}>
+              Hold Camera Steady
+            </h3>
+          </div>
+          <p style={{ color: "rgba(243, 237, 225, 0.88)", fontSize: "0.78rem", margin: "0 0 10px", lineHeight: 1.3 }}>
+            Your face is framed above the cake! When ready, tap below to start:
           </p>
           <button
             type="button"
             onClick={() => startCelebrationRecordingFlow()}
             style={{
               width: "100%",
-              padding: "12px 20px",
-              borderRadius: "18px",
+              padding: "10px 18px",
+              borderRadius: "16px",
               background: "linear-gradient(135deg, #d4af37 0%, #ffd700 50%, #b38728 100%)",
               color: "#18040d",
               fontWeight: 900,
-              fontSize: "0.95rem",
+              fontSize: "0.92rem",
               border: "none",
               cursor: "pointer",
               boxShadow: "0 6px 20px rgba(212, 175, 55, 0.5)",
@@ -1687,80 +1689,122 @@ export default function LiveCakeExperience({
         </div>
       )}
 
-      {/* ── Automatic 3, 2, 1 Countdown & Auto-Recording Overlay ── */}
+      {/* ── Automatic 3, 2, 1 Countdown & Auto-Recording Top HUD (Positioned at top: 14px so face is 100% crystal clear) ── */}
       {countdown !== null && (
         <div
           style={{
             position: "absolute",
-            top: "32%",
+            top: "14px",
             left: "50%",
-            transform: "translate(-50%, -50%)",
-            zIndex: 40,
-            background: "rgba(18, 4, 14, 0.95)",
-            backdropFilter: "blur(20px)",
-            WebkitBackdropFilter: "blur(20px)",
-            border: "2.5px solid #ffd166",
-            borderRadius: "28px",
-            padding: "18px 24px",
-            textAlign: "center",
-            width: "min(340px, 90vw)",
-            boxSizing: "border-box",
-            boxShadow: "0 20px 55px rgba(0, 0, 0, 0.92), 0 0 35px rgba(255, 209, 102, 0.6)",
+            transform: "translateX(-50%)",
+            zIndex: 45,
+            background: "linear-gradient(135deg, rgba(28, 6, 20, 0.95) 0%, rgba(16, 3, 12, 0.97) 100%)",
+            backdropFilter: "blur(18px)",
+            WebkitBackdropFilter: "blur(18px)",
+            border: "2px solid #ffd166",
+            borderRadius: "32px",
+            padding: "8px 18px",
+            boxShadow: "0 10px 35px rgba(0, 0, 0, 0.88), 0 0 25px rgba(255, 209, 102, 0.5)",
             animation: "fadeIn 0.2s ease-out",
             pointerEvents: "none",
             display: "flex",
-            flexDirection: "column",
             alignItems: "center",
+            justifyContent: "center",
+            gap: "10px",
+            maxWidth: "94%",
           }}
         >
-          <div style={{ fontSize: "0.82rem", color: "#fef08a", fontWeight: 800, letterSpacing: "1.5px", textTransform: "uppercase", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", whiteSpace: "nowrap" }}>
-            <span style={{ color: "#ef4444", fontSize: "1.1rem" }}>🔴</span>
-            <span>Recording Automatically</span>
+          <div style={{ display: "flex", alignItems: "center", gap: "5px", flexShrink: 0, whiteSpace: "nowrap" }}>
+            <span style={{ color: "#ef4444", fontSize: "1rem", animation: "pulseGlow 1s infinite ease-in-out" }}>🔴</span>
+            <span style={{ color: "#ffd166", fontWeight: 900, fontSize: "0.8rem", letterSpacing: "1px", whiteSpace: "nowrap" }}>REC</span>
           </div>
-          <div style={{ fontSize: "4.8rem", fontWeight: 900, color: "#ffffff", lineHeight: 1.05, margin: "4px 0", textShadow: "0 0 25px rgba(255, 209, 102, 0.95)" }}>
+
+          <div
+            style={{
+              background: "linear-gradient(135deg, #ffd166, #f59e0b)",
+              color: "#18040d",
+              fontWeight: 900,
+              fontSize: "1.35rem",
+              width: "36px",
+              height: "36px",
+              borderRadius: "50%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              boxShadow: "0 0 16px rgba(255, 209, 102, 0.85)",
+              flexShrink: 0,
+            }}
+          >
             {countdown}
           </div>
-          <div style={{ fontSize: "0.88rem", color: "#fbcfe8", fontWeight: 700, lineHeight: 1.3 }}>
-            {countdown === 3 && "✨ 3... Make your 23rd birthday wish!"}
-            {countdown === 2 && "💨 2... Inhale deeply & get ready to blow!"}
-            {countdown === 1 && "🎂 1... Blow candles now!"}
+
+          <div style={{ textAlign: "left" }}>
+            <div style={{ color: "#ffffff", fontWeight: 800, fontSize: "clamp(0.78rem, 1.4vw, 0.88rem)", whiteSpace: "nowrap" }}>
+              {countdown === 3 && "✨ 3... Make your 23rd wish!"}
+              {countdown === 2 && "💨 2... Inhale & get ready!"}
+              {countdown === 1 && "🎂 1... Blow candles now!"}
+            </div>
+            <div style={{ color: "#fbcfe8", fontSize: "clamp(0.68rem, 1.1vw, 0.74rem)", fontWeight: 600 }}>
+              Recording video automatically
+            </div>
           </div>
         </div>
       )}
 
-      {/* ── Post-Blowout 5-Second Celebration Recording & Auto-Download Overlay ── */}
+      {/* ── Post-Blowout 5-Second Celebration Recording & Auto-Download Top HUD (Positioned at top: 14px so face is 100% visible) ── */}
       {celebrationPostRecordSec !== null && (
         <div
           style={{
             position: "absolute",
-            top: "22%",
+            top: "14px",
             left: "50%",
-            transform: "translate(-50%, -50%)",
-            zIndex: 40,
-            background: "rgba(18, 4, 14, 0.94)",
+            transform: "translateX(-50%)",
+            zIndex: 45,
+            background: "linear-gradient(135deg, rgba(16, 4, 14, 0.95) 0%, rgba(5, 36, 18, 0.95) 100%)",
             backdropFilter: "blur(18px)",
             WebkitBackdropFilter: "blur(18px)",
             border: "2px solid #4ade80",
-            borderRadius: "24px",
-            padding: "12px 20px",
-            textAlign: "center",
-            boxShadow: "0 12px 40px rgba(0, 0, 0, 0.85), 0 0 25px rgba(74, 222, 128, 0.45)",
+            borderRadius: "32px",
+            padding: "8px 18px",
+            boxShadow: "0 10px 35px rgba(0, 0, 0, 0.88), 0 0 25px rgba(74, 222, 128, 0.45)",
             pointerEvents: "none",
-            display: "inline-flex",
+            display: "flex",
             alignItems: "center",
             justifyContent: "center",
             gap: "10px",
-            width: "min(340px, 92vw)",
-            boxSizing: "border-box",
+            maxWidth: "94%",
           }}
         >
-          <span style={{ color: "#ef4444", fontSize: "1.2rem", flexShrink: 0 }}>🔴</span>
+          <div style={{ display: "flex", alignItems: "center", gap: "5px", flexShrink: 0, whiteSpace: "nowrap" }}>
+            <span style={{ color: "#ef4444", fontSize: "1rem", animation: "pulseGlow 1s infinite ease-in-out" }}>🔴</span>
+            <span style={{ color: "#86efac", fontWeight: 900, fontSize: "0.8rem", letterSpacing: "1px", whiteSpace: "nowrap" }}>REC</span>
+          </div>
+
+          <div
+            style={{
+              background: "linear-gradient(135deg, #4ade80, #16a34a)",
+              color: "#052e16",
+              fontWeight: 900,
+              fontSize: "1.15rem",
+              width: "34px",
+              height: "34px",
+              borderRadius: "50%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              boxShadow: "0 0 14px rgba(74, 222, 128, 0.8)",
+              flexShrink: 0,
+            }}
+          >
+            {celebrationPostRecordSec}s
+          </div>
+
           <div style={{ textAlign: "left" }}>
-            <div style={{ color: "#ffffff", fontWeight: 900, fontSize: "clamp(0.85rem, 1.6vw, 0.98rem)" }}>
-              Recording Celebration ({celebrationPostRecordSec}s)...
+            <div style={{ color: "#ffffff", fontWeight: 800, fontSize: "clamp(0.78rem, 1.4vw, 0.88rem)", whiteSpace: "nowrap" }}>
+              Recording Celebration...
             </div>
-            <div style={{ color: "#86efac", fontSize: "clamp(0.72rem, 1.3vw, 0.8rem)", fontWeight: 700 }}>
-              📥 Downloading automatically to your device!
+            <div style={{ color: "#86efac", fontSize: "clamp(0.68rem, 1.1vw, 0.74rem)", fontWeight: 700, whiteSpace: "nowrap" }}>
+              📥 Downloading automatically to device!
             </div>
           </div>
         </div>
@@ -1937,74 +1981,76 @@ export default function LiveCakeExperience({
       )}
 
       {/* ── Clean Top Guidance Pill & Live Recording Badge ── */}
-      <div
-        style={{
-          position: "absolute",
-          top: "14px",
-          left: "50%",
-          transform: "translateX(-50%)",
-          zIndex: 15,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: "6px",
-          pointerEvents: "none",
-          maxWidth: "92%",
-        }}
-      >
+      {countdown === null && celebrationPostRecordSec === null && (
         <div
           style={{
-            background: isBlowingFace
-              ? "linear-gradient(135deg, rgba(22, 101, 52, 0.95), rgba(21, 128, 61, 0.95))"
-              : isRecording
-              ? "linear-gradient(135deg, rgba(153, 27, 27, 0.95), rgba(127, 29, 29, 0.95))"
-              : "rgba(18, 6, 14, 0.88)",
-            backdropFilter: "blur(12px)",
-            WebkitBackdropFilter: "blur(12px)",
-            border: `1.5px solid ${isBlowingFace ? "#4ade80" : isRecording ? "#f87171" : "rgba(255, 209, 102, 0.5)"}`,
-            borderRadius: "30px",
-            padding: "6px 18px",
-            color: isBlowingFace ? "#ffffff" : isRecording ? "#fee2e2" : "#fef08a",
-            fontSize: "clamp(0.78rem, 1.4vw, 0.92rem)",
-            fontWeight: 700,
-            whiteSpace: "nowrap",
-            boxShadow: isBlowingFace ? "0 0 20px rgba(74, 222, 128, 0.6)" : "0 4px 16px rgba(0, 0, 0, 0.45)",
-            transition: "all 0.2s ease",
+            position: "absolute",
+            top: "14px",
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 15,
             display: "flex",
+            flexDirection: "column",
             alignItems: "center",
-            gap: "8px",
+            gap: "6px",
+            pointerEvents: "none",
+            maxWidth: "92%",
           }}
         >
-          {isRecording && (
-            <span
-              style={{
-                width: "8px",
-                height: "8px",
-                borderRadius: "50%",
-                background: "#ef4444",
-                boxShadow: "0 0 8px #ef4444",
-                display: "inline-block",
-                animation: "pulseGlow 1.2s infinite ease-in-out",
-              }}
-            />
-          )}
-          <span>
-            {!candlesBlown
-              ? isBlowingFace
-                ? "💨 Blowing detected! Keep going... ✨"
-                : cameraActive
-                ? isRecording
-                  ? "🔴 Recording AR Moment · Pucker lips & blow candles! 🎬"
-                  : faceDetected
-                  ? "👤 In frame! Pucker lips & blow or tap cake! ✨"
-                  : "👤 Stand back (1–2m) so you're with the cake!"
-                : "✨ Make a wish! Blow candles or tap the cake ✨"
-              : sliced
-              ? "👑 Happy 23rd Birthday Divija! Enjoy your cake! 🎂"
-              : "🔪 Tap 'Cut the Cake' for the ceremonial slice!"}
-          </span>
+          <div
+            style={{
+              background: isBlowingFace
+                ? "linear-gradient(135deg, rgba(22, 101, 52, 0.95), rgba(21, 128, 61, 0.95))"
+                : isRecording
+                ? "linear-gradient(135deg, rgba(153, 27, 27, 0.95), rgba(127, 29, 29, 0.95))"
+                : "rgba(18, 6, 14, 0.88)",
+              backdropFilter: "blur(12px)",
+              WebkitBackdropFilter: "blur(12px)",
+              border: `1.5px solid ${isBlowingFace ? "#4ade80" : isRecording ? "#f87171" : "rgba(255, 209, 102, 0.5)"}`,
+              borderRadius: "30px",
+              padding: "6px 18px",
+              color: isBlowingFace ? "#ffffff" : isRecording ? "#fee2e2" : "#fef08a",
+              fontSize: "clamp(0.78rem, 1.4vw, 0.92rem)",
+              fontWeight: 700,
+              whiteSpace: "nowrap",
+              boxShadow: isBlowingFace ? "0 0 20px rgba(74, 222, 128, 0.6)" : "0 4px 16px rgba(0, 0, 0, 0.45)",
+              transition: "all 0.2s ease",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+            }}
+          >
+            {isRecording && (
+              <span
+                style={{
+                  width: "8px",
+                  height: "8px",
+                  borderRadius: "50%",
+                  background: "#ef4444",
+                  boxShadow: "0 0 8px #ef4444",
+                  display: "inline-block",
+                  animation: "pulseGlow 1.2s infinite ease-in-out",
+                }}
+              />
+            )}
+            <span>
+              {!candlesBlown
+                ? isBlowingFace
+                  ? "💨 Blowing detected! Keep going... ✨"
+                  : cameraActive
+                  ? isRecording
+                    ? "🔴 Recording AR Moment · Pucker lips & blow candles! 🎬"
+                    : faceDetected
+                    ? "👤 In frame! Pucker lips & blow or tap cake! ✨"
+                    : "👤 Stand back (1–2m) so you're with the cake!"
+                  : "✨ Make a wish! Blow candles or tap the cake ✨"
+                : sliced
+                ? "👑 Happy 23rd Birthday Divija! Enjoy your cake! 🎂"
+                : "🔪 Tap 'Cut the Cake' for the ceremonial slice!"}
+            </span>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* ── 3D Three.js Cake Canvas (Full Viewport Freedom of Placement) ── */}
       <div
