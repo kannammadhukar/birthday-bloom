@@ -47,6 +47,8 @@ export default function LiveCakeExperience({
   const [countdown, setCountdown] = useState<number | null>(null);
   const [isPositioning, setIsPositioning] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const [recordingCountdown, setRecordingCountdown] = useState<number | null>(null);
+  const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // ── Keepsake Modal, Photo & Video States ──
   const [capturedPhotoUrl, setCapturedPhotoUrl] = useState<string | null>(null);
@@ -455,6 +457,9 @@ export default function LiveCakeExperience({
       setCutting(false);
       setSliced(true);
       fireCelebrationConfetti();
+      setTimeout(() => {
+        autoCaptureCelebrationSnap(false);
+      }, 700);
       if (onCakeCut) onCakeCut();
     }, 1200);
   }
@@ -528,9 +533,10 @@ export default function LiveCakeExperience({
       }
 
       // 2. Draw 3D Three.js Cake Canvas directly in front of the Person (Tabletop Position)
-      const cakeContainer = document.getElementById("cake-three-canvas-container") ||
+      const cakeContainer =
         document.getElementById("cake-three-canvas") ||
-        containerRef.current;
+        document.querySelector("#cake-three-canvas-container canvas") ||
+        containerRef.current?.querySelector("canvas");
       const webglCanvas = (cakeContainer?.tagName === "CANVAS"
         ? cakeContainer
         : cakeContainer?.querySelector("canvas")) as HTMLCanvasElement | null;
@@ -609,6 +615,7 @@ export default function LiveCakeExperience({
       animFrameRef.current = requestAnimationFrame(renderFrame);
     }
 
+    renderFrame();
     animFrameRef.current = requestAnimationFrame(renderFrame);
   }
 
@@ -619,12 +626,163 @@ export default function LiveCakeExperience({
     }
   }
 
-  // ── Start AR Video Recording ──
-  function startVideoRecording() {
+  // ── Convert Data URL to Blob (Failsafe for Mobile Browsers without network fetch) ──
+  function dataUrlToBlob(dataUrl: string): Blob {
+    try {
+      const parts = dataUrl.split(",");
+      const mimeMatch = parts[0].match(/:(.*?);/);
+      const mime = mimeMatch ? mimeMatch[1] : "image/jpeg";
+      const byteString = atob(parts[1]);
+      const ab = new ArrayBuffer(byteString.length);
+      const ia = new Uint8Array(ab);
+      for (let i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+      }
+      return new Blob([ab], { type: mime });
+    } catch {
+      return new Blob([], { type: "image/jpeg" });
+    }
+  }
+
+  // ── Save Media Directly to Device (Mobile Gallery / Laptop Files) ──
+  const saveMediaToDevice = useCallback(
+    async (type: "photo" | "video", directUrl?: string) => {
+      try {
+        const isMobile =
+          typeof window !== "undefined" &&
+          (window.innerWidth <= 768 ||
+            /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "") ||
+            window.matchMedia("(hover: none) and (pointer: coarse)").matches);
+
+        if (type === "photo") {
+          const photoSrc = directUrl || capturedPhotoUrl;
+          if (!photoSrc) {
+            showToast("⚠️ No photo captured yet. Tap '📸 Take Photo' first!");
+            return;
+          }
+
+          const filename = `divija-23rd-birthday-wish-${Date.now()}.jpg`;
+
+          // Mobile Web Share API: Saves directly to Camera Roll / Google Photos / WhatsApp!
+          if (isMobile && typeof navigator !== "undefined" && typeof navigator.share === "function") {
+            try {
+              let blob: Blob;
+              if (photoSrc.startsWith("data:")) {
+                blob = dataUrlToBlob(photoSrc);
+              } else {
+                const res = await fetch(photoSrc);
+                blob = await res.blob();
+              }
+              const file = new File([blob], filename, { type: "image/jpeg" });
+              if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                  files: [file],
+                  title: "Divija's 23rd Birthday Commemorative Photo 👑",
+                  text: "Divija's 23rd Birthday Celebration Snapshot! ✨",
+                });
+                showToast("✅ Photo saved to device! 📸✨");
+                return;
+              }
+            } catch (err: any) {
+              if (err?.name === "AbortError") return;
+              console.warn("Mobile share photo failed, falling back to download:", err);
+            }
+          }
+
+          // Direct browser download for laptop and standard browsers
+          const a = document.createElement("a");
+          a.href = photoSrc;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => {
+            try {
+              document.body.removeChild(a);
+            } catch {}
+          }, 300);
+          showToast("💾 Photo saved to your device Downloads! 📸✨", 3500);
+        } else {
+          // Video Save
+          const videoSrc = directUrl || capturedVideoUrl;
+          if (!videoSrc) {
+            showToast("⚠️ No video recorded yet. Tap '🎬 Record Clip' first!");
+            return;
+          }
+
+          const isMp4 = videoSrc.includes("mp4") || (mediaRecorderRef.current?.mimeType?.includes("mp4"));
+          const ext = isMp4 ? "mp4" : "webm";
+          const filename = `divija-23rd-birthday-video-${Date.now()}.${ext}`;
+
+          // Mobile Web Share API
+          if (isMobile && typeof navigator !== "undefined" && typeof navigator.share === "function") {
+            try {
+              const res = await fetch(videoSrc);
+              const blob = await res.blob();
+              const file = new File([blob], filename, { type: isMp4 ? "video/mp4" : "video/webm" });
+              if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                  files: [file],
+                  title: "Divija's 23rd Birthday Video Clip 🎬",
+                  text: "Divija's 23rd Birthday Candle Blowout Video! 👑🎂",
+                });
+                showToast("✅ Video saved to device! 🎬✨");
+                return;
+              }
+            } catch (err: any) {
+              if (err?.name === "AbortError") return;
+              console.warn("Mobile share video failed, falling back to download:", err);
+            }
+          }
+
+          // Direct browser download
+          const a = document.createElement("a");
+          a.href = videoSrc;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => {
+            try {
+              document.body.removeChild(a);
+            } catch {}
+          }, 300);
+          showToast("💾 Video saved to your device Downloads! 🎬✨", 3500);
+        }
+      } catch (err) {
+        console.warn("Save to device error:", err);
+        showToast("⚠️ Please tap 'View Keepsakes' and use Download button!");
+      }
+    },
+    [capturedPhotoUrl, capturedVideoUrl]
+  );
+
+  // ── Stop Video Recording Cleanly ──
+  function stopVideoRecording() {
+    if (recordingTimerRef.current) {
+      clearInterval(recordingTimerRef.current);
+      recordingTimerRef.current = null;
+    }
+    setRecordingCountdown(null);
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+      try {
+        mediaRecorderRef.current.stop();
+      } catch (err) {
+        console.warn("Error stopping MediaRecorder:", err);
+      }
+    }
+    setIsRecording(false);
+    isRecordingRef.current = false;
+  }
+
+  // ── Start AR / Studio Video Recording ──
+  function startVideoRecording(durationMs = 4500, autoSave = false) {
     try {
       startCompositeRenderLoop(); // Always make sure composite render loop is actively running
       const canvas = compositeCanvasRef.current;
-      if (!canvas || typeof canvas.captureStream !== "function") return;
+      if (!canvas || typeof canvas.captureStream !== "function") {
+        console.warn("Canvas captureStream not supported on this browser.");
+        showToast("⚠️ Video recording is not supported on this browser.");
+        return;
+      }
 
       // Avoid restarting if already active
       if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
@@ -633,33 +791,64 @@ export default function LiveCakeExperience({
 
       recordedChunksRef.current = [];
 
-      // 30fps canvas stream
-      const canvasStream = canvas.captureStream(30);
+      // 25fps canvas stream for smooth mobile & desktop capture
+      const canvasStream = canvas.captureStream(25);
 
-      // Attach audio track if mic is on
+      // Best MIME types in order of mobile & desktop compatibility
+      const candidateMimes = [
+        "video/mp4;codecs=avc1,mp4a.40.2",
+        "video/mp4",
+        "video/webm;codecs=vp9,opus",
+        "video/webm;codecs=vp8,opus",
+        "video/webm",
+        "",
+      ];
+
+      let selectedMime = "";
+      if (typeof MediaRecorder !== "undefined") {
+        for (const m of candidateMimes) {
+          if (m === "" || MediaRecorder.isTypeSupported(m)) {
+            selectedMime = m;
+            break;
+          }
+        }
+      } else {
+        console.warn("MediaRecorder is not supported on this device/browser.");
+        showToast("⚠️ MediaRecorder is not supported on this browser.");
+        return;
+      }
+
+      let recorder: MediaRecorder | null = null;
+
+      // Attempt audio track combining, fallback to video-only if WebKit throws
       if (micStreamRef.current && micStreamRef.current.getAudioTracks().length > 0) {
         try {
           const audioTrack = micStreamRef.current.getAudioTracks()[0];
-          canvasStream.addTrack(audioTrack);
+          const combinedStream = new MediaStream([
+            ...canvasStream.getVideoTracks(),
+            audioTrack,
+          ]);
+          try {
+            recorder = new MediaRecorder(combinedStream, selectedMime ? { mimeType: selectedMime } : undefined);
+          } catch {
+            recorder = null;
+          }
         } catch {}
       }
 
-      let mimeType = "video/webm;codecs=vp9,opus";
-      if (typeof MediaRecorder === "undefined") return;
-      if (!MediaRecorder.isTypeSupported(mimeType)) {
-        mimeType = "video/webm;codecs=vp8,opus";
-        if (!MediaRecorder.isTypeSupported(mimeType)) {
-          mimeType = "video/webm";
-          if (!MediaRecorder.isTypeSupported(mimeType)) {
-            mimeType = "video/mp4";
-            if (!MediaRecorder.isTypeSupported(mimeType)) {
-              mimeType = "";
-            }
+      if (!recorder) {
+        try {
+          recorder = new MediaRecorder(canvasStream, selectedMime ? { mimeType: selectedMime } : undefined);
+        } catch {
+          try {
+            recorder = new MediaRecorder(canvasStream);
+          } catch (errRec) {
+            console.warn("Could not create MediaRecorder:", errRec);
+            showToast("⚠️ Could not initialize video recorder.");
+            return;
           }
         }
       }
-
-      const recorder = new MediaRecorder(canvasStream, mimeType ? { mimeType } : undefined);
 
       recorder.ondataavailable = (e) => {
         if (e.data && e.data.size > 0) {
@@ -670,15 +859,22 @@ export default function LiveCakeExperience({
       recorder.onstop = () => {
         setIsRecording(false);
         isRecordingRef.current = false;
+        if (recordingTimerRef.current) {
+          clearInterval(recordingTimerRef.current);
+          recordingTimerRef.current = null;
+        }
+        setRecordingCountdown(null);
 
-        const finalMime = recorder.mimeType || "video/webm";
+        const finalMime = recorder?.mimeType || selectedMime || "video/webm";
         const blob = new Blob(recordedChunksRef.current, { type: finalMime });
         if (blob.size > 0) {
           const videoUrl = URL.createObjectURL(blob);
           setCapturedVideoUrl(videoUrl);
           setActiveKeepsakeTab("video");
-          // Keep video saved in state for on-demand review without interrupting celebration screen
-          showToast("🎬 Celebration video & photo saved! Tap 'View Video & Photo' to preview! 👑✨", 3500);
+          showToast("🎬 Celebration video recorded! Tap '💾 Save Video' or '🎬 View Keepsakes'! 👑✨", 4000);
+          if (autoSave) {
+            saveMediaToDevice("video", videoUrl);
+          }
         }
       };
 
@@ -686,168 +882,202 @@ export default function LiveCakeExperience({
       recorder.start(100);
       setIsRecording(true);
       isRecordingRef.current = true;
+      showToast("🔴 Recording celebration video... ✨", 2000);
+
+      if (durationMs > 0) {
+        let remainingSec = Math.ceil(durationMs / 1000);
+        setRecordingCountdown(remainingSec);
+        if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+        recordingTimerRef.current = setInterval(() => {
+          remainingSec -= 1;
+          if (remainingSec <= 0) {
+            if (recordingTimerRef.current) {
+              clearInterval(recordingTimerRef.current);
+              recordingTimerRef.current = null;
+            }
+            setRecordingCountdown(null);
+            stopVideoRecording();
+          } else {
+            setRecordingCountdown(remainingSec);
+          }
+        }, 1000);
+      }
     } catch (err) {
       console.warn("MediaRecorder could not start:", err);
+      setIsRecording(false);
+      isRecordingRef.current = false;
+      showToast("⚠️ Could not start video recording.");
     }
   }
 
-  // ── Manual AR Photo Snapshot (Divija + 3D Cake + Gold Filigree Plaque) ──
-  const autoCaptureCelebrationSnap = useCallback(async () => {
-    try {
-      setIsCapturing(true);
+  // ── Manual AR / Studio Photo Snapshot (Divija + 3D Cake + Gold Filigree Plaque) ──
+  const autoCaptureCelebrationSnap = useCallback(
+    async (saveDirectly = false) => {
+      try {
+        setIsCapturing(true);
 
-      const offCanvas = document.createElement("canvas");
-      offCanvas.width = 1280;
-      offCanvas.height = 920;
-      const ctx = offCanvas.getContext("2d");
-      if (!ctx) {
-        setIsCapturing(false);
-        return;
-      }
-
-      // Outer Luxury Dark Bordeaux Frame
-      ctx.fillStyle = "#12040b";
-      ctx.fillRect(0, 0, offCanvas.width, offCanvas.height);
-
-      const photoX = 40;
-      const photoY = 36;
-      const photoW = 1200;
-      const photoH = 744;
-
-      const video = videoRef.current;
-      const isVideoReady = cameraActive && video && video.readyState >= 2 && video.videoWidth > 0;
-
-      // 1. Draw Background: Live Camera Stream (Divija) or Studio Backdrop
-      if (isVideoReady && video) {
-        const vW = video.videoWidth || 1280;
-        const vH = video.videoHeight || 720;
-        const vAspect = vW / vH;
-        const targetAspect = photoW / photoH; // 1200 / 744 ≈ 1.613
-
-        let sx = 0, sy = 0, sw = vW, sh = vH;
-        if (vAspect > targetAspect) {
-          sw = vH * targetAspect;
-          sx = (vW - sw) / 2;
-        } else {
-          sh = vW / targetAspect;
-          sy = (vH - sh) / 2;
+        const offCanvas = document.createElement("canvas");
+        offCanvas.width = 1280;
+        offCanvas.height = 920;
+        const ctx = offCanvas.getContext("2d");
+        if (!ctx) {
+          setIsCapturing(false);
+          return null;
         }
 
-        ctx.save();
-        ctx.beginPath();
-        ctx.roundRect(photoX, photoY, photoW, photoH, 16);
-        ctx.clip();
+        // Outer Luxury Dark Bordeaux Frame
+        ctx.fillStyle = "#12040b";
+        ctx.fillRect(0, 0, offCanvas.width, offCanvas.height);
 
-        if (facingMode === "user") {
-          ctx.translate(photoX + photoW, photoY);
-          ctx.scale(-1, 1);
-          ctx.drawImage(video, sx, sy, sw, sh, 0, 0, photoW, photoH);
-        } else {
-          ctx.drawImage(video, sx, sy, sw, sh, photoX, photoY, photoW, photoH);
-        }
-        ctx.restore();
-      } else {
-        // Luxury Burgundy Studio Backdrop
-        const bgGrad = ctx.createLinearGradient(photoX, photoY, photoX, photoY + photoH);
-        bgGrad.addColorStop(0, "#220517");
-        bgGrad.addColorStop(0.5, "#420d29");
-        bgGrad.addColorStop(1, "#0d0208");
-        ctx.fillStyle = bgGrad;
-        ctx.fillRect(photoX, photoY, photoW, photoH);
+        const photoX = 40;
+        const photoY = 36;
+        const photoW = 1200;
+        const photoH = 744;
 
-        const glowGrad = ctx.createRadialGradient(
-          photoX + photoW / 2,
-          photoY + photoH / 2,
-          50,
-          photoX + photoW / 2,
-          photoY + photoH / 2,
-          550
-        );
-        glowGrad.addColorStop(0, "rgba(255, 209, 102, 0.28)");
-        glowGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
-        ctx.fillStyle = glowGrad;
-        ctx.fillRect(photoX, photoY, photoW, photoH);
-      }
+        const video = videoRef.current;
+        const isVideoReady = cameraActive && video && video.readyState >= 2 && video.videoWidth > 0;
 
-      // 2. Draw 3D Three.js Cake Canvas directly on top (Tabletop Position)
-      const cakeContainer = document.getElementById("cake-three-canvas-container") ||
-        document.getElementById("cake-three-canvas") ||
-        containerRef.current;
-      const webglCanvas = (cakeContainer?.tagName === "CANVAS"
-        ? cakeContainer
-        : cakeContainer?.querySelector("canvas")) as HTMLCanvasElement | null;
+        // 1. Draw Background: Live Camera Stream (Divija) or Studio Backdrop
+        if (isVideoReady && video) {
+          const vW = video.videoWidth || 1280;
+          const vH = video.videoHeight || 720;
+          const vAspect = vW / vH;
+          const targetAspect = photoW / photoH; // 1200 / 744 ≈ 1.613
 
-      if (webglCanvas && webglCanvas.width > 0 && webglCanvas.height > 0) {
-        const cW = webglCanvas.width;
-        const cH = webglCanvas.height;
-        try {
-          if (streamRef.current && streamRef.current.active) {
-            // Drawn 1:1 across photo area so the cake is at the exact position & scale the user placed it
-            ctx.drawImage(webglCanvas, 0, 0, cW, cH, photoX, photoY, photoW, photoH);
+          let sx = 0, sy = 0, sw = vW, sh = vH;
+          if (vAspect > targetAspect) {
+            sw = vH * targetAspect;
+            sx = (vW - sw) / 2;
           } else {
-            const cakeAspect = cW / cH;
-            const targetH = Math.round(photoH * 0.72);
-            let drawW = Math.round(targetH * cakeAspect);
-            let drawH = targetH;
-            if (drawW > photoW) {
-              drawW = photoW;
-              drawH = Math.round(photoW / cakeAspect);
-            }
-            const drawX = photoX + Math.round((photoW - drawW) / 2);
-            const drawY = photoY + Math.round((photoH - drawH) / 2);
-            ctx.drawImage(webglCanvas, 0, 0, cW, cH, drawX, drawY, drawW, drawH);
+            sh = vW / targetAspect;
+            sy = (vH - sh) / 2;
           }
-        } catch (err) {
-          console.warn("Could not draw cake to snapshot canvas:", err);
+
+          ctx.save();
+          ctx.beginPath();
+          ctx.roundRect(photoX, photoY, photoW, photoH, 16);
+          ctx.clip();
+
+          if (facingMode === "user") {
+            ctx.translate(photoX + photoW, photoY);
+            ctx.scale(-1, 1);
+            ctx.drawImage(video, sx, sy, sw, sh, 0, 0, photoW, photoH);
+          } else {
+            ctx.drawImage(video, sx, sy, sw, sh, photoX, photoY, photoW, photoH);
+          }
+          ctx.restore();
+        } else {
+          // Luxury Burgundy Studio Backdrop
+          const bgGrad = ctx.createLinearGradient(photoX, photoY, photoX, photoY + photoH);
+          bgGrad.addColorStop(0, "#220517");
+          bgGrad.addColorStop(0.5, "#420d29");
+          bgGrad.addColorStop(1, "#0d0208");
+          ctx.fillStyle = bgGrad;
+          ctx.fillRect(photoX, photoY, photoW, photoH);
+
+          const glowGrad = ctx.createRadialGradient(
+            photoX + photoW / 2,
+            photoY + photoH / 2,
+            50,
+            photoX + photoW / 2,
+            photoY + photoH / 2,
+            550
+          );
+          glowGrad.addColorStop(0, "rgba(255, 209, 102, 0.28)");
+          glowGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+          ctx.fillStyle = glowGrad;
+          ctx.fillRect(photoX, photoY, photoW, photoH);
         }
+
+        // 2. Draw 3D Three.js Cake Canvas directly on top (Tabletop Position)
+        const cakeContainer =
+          document.getElementById("cake-three-canvas") ||
+          document.querySelector("#cake-three-canvas-container canvas") ||
+          containerRef.current?.querySelector("canvas");
+        const webglCanvas = (cakeContainer?.tagName === "CANVAS"
+          ? cakeContainer
+          : cakeContainer?.querySelector("canvas")) as HTMLCanvasElement | null;
+
+        if (webglCanvas && webglCanvas.width > 0 && webglCanvas.height > 0) {
+          const cW = webglCanvas.width;
+          const cH = webglCanvas.height;
+          try {
+            if (streamRef.current && streamRef.current.active) {
+              // Drawn 1:1 across photo area so the cake is at the exact position & scale the user placed it
+              ctx.drawImage(webglCanvas, 0, 0, cW, cH, photoX, photoY, photoW, photoH);
+            } else {
+              const cakeAspect = cW / cH;
+              const targetH = Math.round(photoH * 0.72);
+              let drawW = Math.round(targetH * cakeAspect);
+              let drawH = targetH;
+              if (drawW > photoW) {
+                drawW = photoW;
+                drawH = Math.round(photoW / cakeAspect);
+              }
+              const drawX = photoX + Math.round((photoW - drawW) / 2);
+              const drawY = photoY + Math.round((photoH - drawH) / 2);
+              ctx.drawImage(webglCanvas, 0, 0, cW, cH, drawX, drawY, drawW, drawH);
+            }
+          } catch (err) {
+            console.warn("Could not draw cake to snapshot canvas:", err);
+          }
+        }
+
+        // 3. Ornate Gold Filigree Frame Border
+        ctx.strokeStyle = "rgba(212, 175, 55, 0.85)";
+        ctx.lineWidth = 4;
+        ctx.strokeRect(photoX, photoY, photoW, photoH);
+
+        // Inner thin gold accent border
+        ctx.strokeStyle = "rgba(255, 209, 102, 0.4)";
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(photoX + 8, photoY + 8, photoW - 16, photoH - 16);
+
+        // 4. Polaroid Souvenir Plaque Footer
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(photoX, photoY + photoH, photoW, 104);
+
+        ctx.fillStyle = "#d4af37";
+        ctx.fillRect(photoX, photoY + photoH, photoW, 3);
+
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+
+        ctx.fillStyle = "#6a040f";
+        ctx.font = "bold 26px 'Playfair Display', Georgia, serif";
+        ctx.fillText("✦ DIVIJA'S 23RD BIRTHDAY GALA · THURSDAY, 11 SEPTEMBER 2026 👑 ✦", 640, 826);
+
+        ctx.fillStyle = "#9d174d";
+        ctx.font = "italic 16px 'Cinzel', Georgia, serif";
+        ctx.fillText(
+          "✨ The Birthday Wish Made & Candles Extinguished in Pure Wonder · Medico Divija ✨",
+          640,
+          858
+        );
+
+        ctx.fillStyle = "#78350f";
+        ctx.font = "12px sans-serif";
+        ctx.fillText(`Recorded Live · ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`, 640, 878);
+
+        const dataUrl = offCanvas.toDataURL("image/jpeg", 0.95);
+        setCapturedPhotoUrl(dataUrl);
+        setIsCapturing(false);
+        setActiveKeepsakeTab("photo");
+
+        if (saveDirectly) {
+          await saveMediaToDevice("photo", dataUrl);
+        } else {
+          showToast("📸 Commemorative keepsake photo captured! 👑✨", 3500);
+        }
+        return dataUrl;
+      } catch (err) {
+        console.warn("Snapshot capture error:", err);
+        setIsCapturing(false);
+        return null;
       }
-
-      // 3. Ornate Gold Filigree Frame Border
-      ctx.strokeStyle = "rgba(212, 175, 55, 0.85)";
-      ctx.lineWidth = 4;
-      ctx.strokeRect(photoX, photoY, photoW, photoH);
-
-      // Inner thin gold accent border
-      ctx.strokeStyle = "rgba(255, 209, 102, 0.4)";
-      ctx.lineWidth = 1.5;
-      ctx.strokeRect(photoX + 8, photoY + 8, photoW - 16, photoH - 16);
-
-      // 4. Polaroid Souvenir Plaque Footer
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(photoX, photoY + photoH, photoW, 104);
-
-      ctx.fillStyle = "#d4af37";
-      ctx.fillRect(photoX, photoY + photoH, photoW, 3);
-
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-
-      ctx.fillStyle = "#6a040f";
-      ctx.font = "bold 26px 'Playfair Display', Georgia, serif";
-      ctx.fillText("✦ DIVIJA'S 23RD BIRTHDAY GALA · THURSDAY, 11 SEPTEMBER 2026 👑 ✦", 640, 826);
-
-      ctx.fillStyle = "#9d174d";
-      ctx.font = "italic 16px 'Cinzel', Georgia, serif";
-      ctx.fillText(
-        "✨ The Birthday Wish Made & Candles Extinguished in Pure Wonder · Medico Divija ✨",
-        640,
-        858
-      );
-
-      ctx.fillStyle = "#78350f";
-      ctx.font = "12px sans-serif";
-      ctx.fillText(`Recorded Live · ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`, 640, 878);
-
-      const dataUrl = offCanvas.toDataURL("image/jpeg", 0.95);
-      setCapturedPhotoUrl(dataUrl);
-      setIsCapturing(false);
-
-      // Save photo in state quietly without popping up unrequested modal over user screen
-      setActiveKeepsakeTab("photo");
-    } catch {
-      setIsCapturing(false);
-    }
-  }, [cameraActive, facingMode]);
+    },
+    [cameraActive, facingMode, saveMediaToDevice]
+  );
 
   // ── Unified Blow Trigger: Extinguishes Candles with Confetti & Music ──
   const triggerBlowSuccess = useCallback(
@@ -867,31 +1097,29 @@ export default function LiveCakeExperience({
       fireCelebrationConfetti();
       triggerVideoConfetti();
 
-      // Only perform AR composite video recording if user actually activated the camera
-      if (cameraActive) {
-        startCompositeRenderLoop();
-        if (!isRecordingRef.current || !mediaRecorderRef.current || mediaRecorderRef.current.state !== "recording") {
-          startVideoRecording();
-        }
-
-        // Snap commemorative AR photo at peak celebration
-        setTimeout(() => {
-          autoCaptureCelebrationSnap();
-        }, 1500);
-
-        // Record exactly 4.0 seconds of celebration
-        setTimeout(() => {
-          if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
-            try {
-              mediaRecorderRef.current.stop();
-            } catch (err) {
-              console.warn("Error stopping MediaRecorder:", err);
-            }
-          }
-        }, 4000);
+      // Celebration recording and photo capture runs unconditionally in BOTH Studio & AR Mode
+      startCompositeRenderLoop();
+      if (!isRecordingRef.current || !mediaRecorderRef.current || mediaRecorderRef.current.state !== "recording") {
+        startVideoRecording(4500, false);
       }
+
+      // Snap commemorative keepsake photo at peak celebration
+      setTimeout(() => {
+        autoCaptureCelebrationSnap(false);
+      }, 1500);
+
+      // Record celebration
+      setTimeout(() => {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+          try {
+            mediaRecorderRef.current.stop();
+          } catch (err) {
+            console.warn("Error stopping MediaRecorder:", err);
+          }
+        }
+      }, 4500);
     },
-    [cameraActive, onToggleBlow]
+    [onToggleBlow, autoCaptureCelebrationSnap]
   );
 
   // ── Unified 7-Second Pre-Roll & Video Recording Ceremony Flow ──
@@ -2051,6 +2279,61 @@ export default function LiveCakeExperience({
                 ⚙️
               </button>
 
+              {/* 2. Manual Snap Photo Button (Always Available in AR & Studio Modes) */}
+              <button
+                type="button"
+                onClick={() => autoCaptureCelebrationSnap(true)}
+                disabled={isCapturing}
+                title="Snap photo & save directly to device"
+                style={{
+                  padding: "9px 16px",
+                  borderRadius: "32px",
+                  border: "1.5px solid #4ade80",
+                  cursor: isCapturing ? "wait" : "pointer",
+                  background: "linear-gradient(135deg, #15803d 0%, #166534 100%)",
+                  color: "#ffffff",
+                  fontWeight: 800,
+                  fontSize: "clamp(0.82rem, 1.4vw, 0.92rem)",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  boxShadow: "0 0 14px rgba(74, 222, 128, 0.35)",
+                }}
+              >
+                <span>{isCapturing ? "⏳ Snapping..." : "📸 Take Photo"}</span>
+              </button>
+
+              {/* 3. Manual Record Clip Button (Always Available) */}
+              <button
+                type="button"
+                onClick={() => {
+                  if (isRecording) {
+                    stopVideoRecording();
+                  } else {
+                    startVideoRecording(5000, true);
+                  }
+                }}
+                title={isRecording ? "Stop recording clip" : "Record 5s video clip & save to device"}
+                style={{
+                  padding: "9px 16px",
+                  borderRadius: "32px",
+                  border: isRecording ? "2px solid #ef4444" : "1.5px solid #f43f5e",
+                  cursor: "pointer",
+                  background: isRecording
+                    ? "linear-gradient(135deg, #b91c1c 0%, #991b1b 100%)"
+                    : "linear-gradient(135deg, #e11d48 0%, #be123c 100%)",
+                  color: "#ffffff",
+                  fontWeight: 800,
+                  fontSize: "clamp(0.82rem, 1.4vw, 0.92rem)",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  boxShadow: isRecording ? "0 0 18px rgba(239, 68, 68, 0.7)" : "0 0 12px rgba(244, 63, 94, 0.35)",
+                }}
+              >
+                <span>{isRecording ? `⏹️ Stop (${recordingCountdown ?? 5}s)` : "🎬 Record Clip"}</span>
+              </button>
+
               {/* Keepsake Viewer Button: allows re-opening video & photo at any time */}
               {(capturedVideoUrl || capturedPhotoUrl) && (
                 <button
@@ -2071,35 +2354,55 @@ export default function LiveCakeExperience({
                     boxShadow: "0 0 14px rgba(255, 215, 0, 0.4)",
                   }}
                 >
-                  <span>🎬 View Keepsakes (Video & Photo)</span>
+                  <span>🎬 View Keepsakes</span>
                 </button>
               )}
 
-              {/* 2. Manual Snap AR Photo Button (when camera is on) */}
-              {cameraActive && (
+              {/* Direct Save Photo shortcut */}
+              {capturedPhotoUrl && (
                 <button
                   type="button"
-                  onClick={() => {
-                    autoCaptureCelebrationSnap();
-                    showToast("📸 Commemorative AR Photo Captured! ✨");
-                  }}
-                  disabled={isCapturing}
+                  onClick={() => saveMediaToDevice("photo")}
+                  title="Save captured photo to device"
                   style={{
-                    padding: "9px 16px",
+                    padding: "8px 12px",
                     borderRadius: "32px",
-                    border: "1.5px solid #4ade80",
+                    border: "1px solid #4ade80",
                     cursor: "pointer",
-                    background: "linear-gradient(135deg, #15803d 0%, #166534 100%)",
-                    color: "#ffffff",
-                    fontWeight: 800,
-                    fontSize: "clamp(0.82rem, 1.4vw, 0.92rem)",
+                    background: "rgba(34, 197, 94, 0.2)",
+                    color: "#86efac",
+                    fontWeight: 700,
+                    fontSize: "0.82rem",
                     display: "inline-flex",
                     alignItems: "center",
-                    gap: "6px",
-                    boxShadow: "0 0 14px rgba(74, 222, 128, 0.4)",
+                    gap: "4px",
                   }}
                 >
-                  <span>{isCapturing ? "⏳ Snapping..." : "📸 Snap AR Photo"}</span>
+                  <span>💾 Photo</span>
+                </button>
+              )}
+
+              {/* Direct Save Video shortcut */}
+              {capturedVideoUrl && (
+                <button
+                  type="button"
+                  onClick={() => saveMediaToDevice("video")}
+                  title="Save celebration video to device"
+                  style={{
+                    padding: "8px 12px",
+                    borderRadius: "32px",
+                    border: "1px solid #38bdf8",
+                    cursor: "pointer",
+                    background: "rgba(56, 189, 248, 0.2)",
+                    color: "#7dd3fc",
+                    fontWeight: 700,
+                    fontSize: "0.82rem",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                  }}
+                >
+                  <span>💾 Video</span>
                 </button>
               )}
 
@@ -2175,7 +2478,62 @@ export default function LiveCakeExperience({
                 </button>
               )}
 
-              {/* 2. View Keepsake (Video & Photo) */}
+              {/* 2. Manual Snap Photo Button (After Blow) */}
+              <button
+                type="button"
+                onClick={() => autoCaptureCelebrationSnap(true)}
+                disabled={isCapturing}
+                title="Snap photo & save directly to device"
+                style={{
+                  padding: "9px 16px",
+                  borderRadius: "32px",
+                  border: "1.5px solid #4ade80",
+                  cursor: isCapturing ? "wait" : "pointer",
+                  background: "linear-gradient(135deg, #15803d 0%, #166534 100%)",
+                  color: "#ffffff",
+                  fontWeight: 800,
+                  fontSize: "clamp(0.82rem, 1.4vw, 0.92rem)",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  boxShadow: "0 0 14px rgba(74, 222, 128, 0.35)",
+                }}
+              >
+                <span>{isCapturing ? "⏳ Snapping..." : "📸 Take Photo"}</span>
+              </button>
+
+              {/* 3. Manual Record Clip Button (After Blow) */}
+              <button
+                type="button"
+                onClick={() => {
+                  if (isRecording) {
+                    stopVideoRecording();
+                  } else {
+                    startVideoRecording(5000, true);
+                  }
+                }}
+                title={isRecording ? "Stop recording clip" : "Record 5s video clip & save to device"}
+                style={{
+                  padding: "9px 16px",
+                  borderRadius: "32px",
+                  border: isRecording ? "2px solid #ef4444" : "1.5px solid #f43f5e",
+                  cursor: "pointer",
+                  background: isRecording
+                    ? "linear-gradient(135deg, #b91c1c 0%, #991b1b 100%)"
+                    : "linear-gradient(135deg, #e11d48 0%, #be123c 100%)",
+                  color: "#ffffff",
+                  fontWeight: 800,
+                  fontSize: "clamp(0.82rem, 1.4vw, 0.92rem)",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  boxShadow: isRecording ? "0 0 18px rgba(239, 68, 68, 0.7)" : "0 0 12px rgba(244, 63, 94, 0.35)",
+                }}
+              >
+                <span>{isRecording ? `⏹️ Stop (${recordingCountdown ?? 5}s)` : "🎬 Record Clip"}</span>
+              </button>
+
+              {/* 4. View Keepsake (Video & Photo) */}
               {(capturedVideoUrl || capturedPhotoUrl) && (
                 <button
                   type="button"
@@ -2194,11 +2552,59 @@ export default function LiveCakeExperience({
                     gap: "6px",
                   }}
                 >
-                  <span>🎬 View Video &amp; Photo</span>
+                  <span>🎬 View Keepsakes</span>
                 </button>
               )}
 
-              {/* 3. Relight Candles Option */}
+              {/* Direct Save Photo shortcut */}
+              {capturedPhotoUrl && (
+                <button
+                  type="button"
+                  onClick={() => saveMediaToDevice("photo")}
+                  title="Save photo to device"
+                  style={{
+                    padding: "8px 12px",
+                    borderRadius: "32px",
+                    border: "1px solid #4ade80",
+                    cursor: "pointer",
+                    background: "rgba(34, 197, 94, 0.2)",
+                    color: "#86efac",
+                    fontWeight: 700,
+                    fontSize: "0.82rem",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                  }}
+                >
+                  <span>💾 Photo</span>
+                </button>
+              )}
+
+              {/* Direct Save Video shortcut */}
+              {capturedVideoUrl && (
+                <button
+                  type="button"
+                  onClick={() => saveMediaToDevice("video")}
+                  title="Save celebration video to device"
+                  style={{
+                    padding: "8px 12px",
+                    borderRadius: "32px",
+                    border: "1px solid #38bdf8",
+                    cursor: "pointer",
+                    background: "rgba(56, 189, 248, 0.2)",
+                    color: "#7dd3fc",
+                    fontWeight: 700,
+                    fontSize: "0.82rem",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                  }}
+                >
+                  <span>💾 Video</span>
+                </button>
+              )}
+
+              {/* 5. Relight Candles Option */}
               <button
                 type="button"
                 onClick={() => {
@@ -2469,48 +2875,94 @@ export default function LiveCakeExperience({
                 marginTop: "4px",
               }}
             >
-              {/* Save / Download Current Tab */}
+              {/* Primary Action: Direct Save to Device (Works on iOS, Android & PC) */}
               {activeKeepsakeTab === "video" && capturedVideoUrl ? (
-                <a
-                  href={capturedVideoUrl}
-                  download={`divija-23rd-birthday-video-${Date.now()}.webm`}
+                <button
+                  type="button"
+                  onClick={() => saveMediaToDevice("video")}
                   style={{
                     padding: "10px 22px",
                     borderRadius: "32px",
+                    border: "none",
+                    cursor: "pointer",
                     background: "linear-gradient(135deg, #ffd166 0%, #d4af37 100%)",
                     color: "#18020b",
                     fontWeight: 900,
                     fontSize: "0.92rem",
-                    textDecoration: "none",
                     display: "inline-flex",
                     alignItems: "center",
                     gap: "8px",
                     boxShadow: "0 4px 18px rgba(212, 175, 55, 0.45)",
                   }}
                 >
-                  <span>💾 Download Video Clip</span>
-                </a>
+                  <span>💾 Save Video to Device</span>
+                </button>
               ) : capturedPhotoUrl ? (
-                <a
-                  href={capturedPhotoUrl}
-                  download={`divija-23rd-birthday-wish-${Date.now()}.jpg`}
+                <button
+                  type="button"
+                  onClick={() => saveMediaToDevice("photo")}
                   style={{
                     padding: "10px 22px",
                     borderRadius: "32px",
+                    border: "none",
+                    cursor: "pointer",
                     background: "linear-gradient(135deg, #ffd166 0%, #d4af37 100%)",
                     color: "#18020b",
                     fontWeight: 900,
                     fontSize: "0.92rem",
-                    textDecoration: "none",
                     display: "inline-flex",
                     alignItems: "center",
                     gap: "8px",
                     boxShadow: "0 4px 18px rgba(212, 175, 55, 0.45)",
                   }}
                 >
-                  <span>💾 Download Photo</span>
-                </a>
+                  <span>💾 Save Photo to Device</span>
+                </button>
               ) : null}
+
+              {/* Quick secondary button to save the OTHER media if both exist */}
+              {activeKeepsakeTab === "video" && capturedPhotoUrl && (
+                <button
+                  type="button"
+                  onClick={() => saveMediaToDevice("photo")}
+                  style={{
+                    padding: "10px 18px",
+                    borderRadius: "32px",
+                    border: "1.5px solid rgba(255, 209, 102, 0.5)",
+                    cursor: "pointer",
+                    background: "rgba(255, 209, 102, 0.12)",
+                    color: "#ffd166",
+                    fontWeight: 800,
+                    fontSize: "0.88rem",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px",
+                  }}
+                >
+                  <span>📸 Also Save Photo</span>
+                </button>
+              )}
+              {activeKeepsakeTab === "photo" && capturedVideoUrl && (
+                <button
+                  type="button"
+                  onClick={() => saveMediaToDevice("video")}
+                  style={{
+                    padding: "10px 18px",
+                    borderRadius: "32px",
+                    border: "1.5px solid rgba(255, 209, 102, 0.5)",
+                    cursor: "pointer",
+                    background: "rgba(255, 209, 102, 0.12)",
+                    color: "#ffd166",
+                    fontWeight: 800,
+                    fontSize: "0.88rem",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px",
+                  }}
+                >
+                  <span>🎬 Also Save Video</span>
+                </button>
+              )}
 
               {/* Cut Cake button */}
               {!sliced && (
